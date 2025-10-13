@@ -466,7 +466,7 @@ public class Bag : ItemDrop.ItemData
     {
         if (isLoaded) return;
         SetupInventory();
-        if (m_customData.TryGetValue(BAG_DATA_KEY, out var data))
+        if (m_customData.TryGetValue(BAG_DATA_KEY, out string data))
         {
             ZPackage pkg = new ZPackage(data);
             inventory.Load(pkg);

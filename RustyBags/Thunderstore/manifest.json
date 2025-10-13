@@ -1,8 +1,8 @@
 {
-  "name": "",
+  "name": "RustyBags",
   "version_number": "1.0.0",
-  "website_url": "",
-  "description": "",
+  "website_url": "https://github.com/RustyMods/RustyBags",
+  "description": "Yet another bag mod, but this time, lanterns and weapons show up attached to bag - also quivers",
   "dependencies": [
     "denikson-BepInExPack_Valheim-5.4.2202"
   ]
