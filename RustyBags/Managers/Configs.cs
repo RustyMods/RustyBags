@@ -1,0 +1,102 @@
+﻿using System;
+using System.IO;
+using BepInEx;
+using BepInEx.Configuration;
+using JetBrains.Annotations;
+using ServerSync;
+
+namespace RustyBags.Managers;
+
+public enum Toggle { On = 1, Off = 0 }
+
+public static class Configs
+{
+    private static ConfigEntry<Toggle> _serverConfigLocked = null!;
+    private static ConfigEntry<Toggle> _autoStack = null!;
+
+    public static bool AutoStack => _autoStack.Value is Toggle.On;
+
+    public static void Setup()
+    {
+        _serverConfigLocked = config("1 - General", "Lock Configuration", Toggle.On,
+            "If on, the configuration is locked and can be changed by server admins only.");
+        _ = RustyBagsPlugin.ConfigSync.AddLockingConfigEntry(_serverConfigLocked);
+
+        _autoStack = config("1 - General", "Stack Into Bag", Toggle.On,
+            "If on, equipped bag will try to stack items on pickup", false);
+        
+        foreach(var bagSetup in BagSetup.bags.Values) bagSetup.SetupConfigs();
+        
+        SetupWatcher();
+    }
+    
+    private static void SetupWatcher()
+    {
+        FileSystemWatcher watcher = new(Paths.ConfigPath, RustyBagsPlugin.ConfigFileName);
+        watcher.Changed += ReadConfigValues;
+        watcher.Created += ReadConfigValues;
+        watcher.Renamed += ReadConfigValues;
+        watcher.IncludeSubdirectories = true;
+        watcher.SynchronizingObject = ThreadingHelper.SynchronizingObject;
+        watcher.EnableRaisingEvents = true;
+    }
+
+    private static void ReadConfigValues(object sender, FileSystemEventArgs e)
+    {
+        if (!File.Exists(RustyBagsPlugin.ConfigFileFullPath)) return;
+        try
+        {
+            RustyBagsPlugin.RustyBagsLogger.LogDebug("ReadConfigValues called");
+            RustyBagsPlugin.instance.Config.Reload();
+        }
+        catch
+        {
+            RustyBagsPlugin.RustyBagsLogger.LogError($"There was an issue loading your {RustyBagsPlugin.ConfigFileName}");
+            RustyBagsPlugin.RustyBagsLogger.LogError("Please check your config entries for spelling and format!");
+        }
+    }
+
+    public static ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description,
+        bool synchronizedSetting = true)
+    {
+        ConfigDescription extendedDescription =
+            new(
+                description.Description +
+                (synchronizedSetting ? " [Synced with Server]" : " [Not Synced with Server]"),
+                description.AcceptableValues, description.Tags);
+        ConfigEntry<T> configEntry = RustyBagsPlugin.instance.Config.Bind(group, name, value, extendedDescription);
+        //var configEntry = Config.Bind(group, name, value, description);
+
+        SyncedConfigEntry<T> syncedConfigEntry = RustyBagsPlugin.ConfigSync.AddConfigEntry(configEntry);
+        syncedConfigEntry.SynchronizedConfig = synchronizedSetting;
+
+        return configEntry;
+    }
+
+    public static ConfigEntry<T> config<T>(string group, string name, T value, string description,
+        bool synchronizedSetting = true)
+    {
+        return config(group, name, value, new ConfigDescription(description), synchronizedSetting);
+    }
+
+    public class ConfigurationManagerAttributes
+    {
+        [UsedImplicitly] public int? Order = null!;
+        [UsedImplicitly] public bool? Browsable = null!;
+        [UsedImplicitly] public string? Category = null!;
+        [UsedImplicitly] public Action<ConfigEntryBase>? CustomDrawer = null!;
+    }
+
+    class AcceptableShortcuts : AcceptableValueBase
+    {
+        public AcceptableShortcuts() : base(typeof(KeyboardShortcut))
+        {
+        }
+
+        public override object Clamp(object value) => value;
+        public override bool IsValid(object value) => true;
+
+        public override string ToDescriptionString() =>
+            "# Acceptable values: " + string.Join(", ", UnityInput.Current.SupportedKeyCodes);
+    }
+}
