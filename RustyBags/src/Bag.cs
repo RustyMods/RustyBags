@@ -353,7 +353,6 @@ public class BagSetup
             if (!locked && (width != widthCfg || height != heightCfg))
             {
                 cfg.BoxedValue = string.Join("x", width, height);
-                Debug.LogWarning("cfg changed");
             }
         }
     }
@@ -418,6 +417,7 @@ public class Bag : ItemDrop.ItemData
         atgeir = null;
         foreach (ItemDrop.ItemData? item in inventory.GetAllItemsInGridOrder())
         {
+            if (!item.IsEquipable()) continue;
             if (item.m_shared.m_name == "$item_lantern" && lantern == null)
             {
                 lantern = item;
@@ -450,6 +450,9 @@ public class Bag : ItemDrop.ItemData
             {
                 atgeir = item;
             }
+
+            if (lantern != null && fishingRod != null && cultivator != null && hoe != null && hammer != null &&
+                pickaxe != null && melee != null && atgeir != null) break;
         }
         
         m_bagEquipment?.SetLanternItem(lantern?.m_dropPrefab.name ?? "");
@@ -480,7 +483,7 @@ public class Bag : ItemDrop.ItemData
     protected virtual void SetupInventory()
     {
         BagSetup setup = BagSetup.bags[m_shared.m_name];
-        var size = setup.sizes.TryGetValue(m_quality, out var s) ? s : new BagSetup.Size(1, 1); 
+        BagSetup.Size size = setup.sizes.TryGetValue(m_quality, out var s) ? s : new BagSetup.Size(1, 1); 
         inventory = new BagInventory("Bag", Player.m_localPlayer?.GetInventory().m_bkg, size.width, size.height);
     }
 

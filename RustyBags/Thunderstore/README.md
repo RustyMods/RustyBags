@@ -1,22 +1,30 @@
-# Rusty Bags
+# 👜 Rusty Bags
 
-Yet another bag mod... but the visuals of these change based on contents !
-Cultivator, Hoe, Lantern, Pickaxes, Melee, Atgeir, Fishing Rod, Hammer show up attached to bag if inside inventory.
+A bag plugin with a twist — the look of your bag changes based on what’s inside!  
+Tools like the Cultivator, Hoe, Lantern, Pickaxe, Melee Weapons, Atgeir, Fishing Rod, and Hammer will appear visibly attached when stored in your bag.
 
-## Features
+---
 
-- 4 bags
-- 2 quivers
-- Craft from bag
-- Items picked up get automatically stacked into bag, if item already exists in bag - On/Off
-- Arrows in quiver can be used to shoot
-- Arrows in quiver visually updates based on first arrow item in quiver, and stack affects quiver visuals
+## ✨ Features
 
-## Notes
+- 🧳 4 unique bags and 2 functional quivers
+- 🧵 Visual updates based on bag contents
+- ⚒️ Craft directly from your bag
+- 📦 Items picked up will stack automatically into a matching bag (toggleable)
+- 🏹 Dynamic quivers:
+    - Arrows inside can be used for shooting
+    - Quiver visuals update based on the first arrow and stack size
 
-- Bags add carry weight, but reduce movement speed
-- Cannot stack bags into bags
+---
+
+## ⚖️ Notes
+
+- Bags increase carry weight but reduce movement speed
+- Bags cannot be stored inside other bags
 - Quivers only accept arrows
+- If you reduce your inventory size, you may lose stored items
+
+---
 
 ![](https://i.imgur.com/PSH6qZ3.png)
 
@@ -25,7 +33,7 @@ Cultivator, Hoe, Lantern, Pickaxes, Melee, Atgeir, Fishing Rod, Hammer show up a
 ![](https://i.imgur.com/ZzjP5Ze.png)
 
 
-## Configurable Sizes
+## Example Configuration
 ```properties
 [Barrel Bag]
 

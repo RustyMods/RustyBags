@@ -37,6 +37,9 @@ public class BagEquipment : MonoBehaviour
     public int m_currentMeleeHash;
     public int m_currentHoeHash;
     public int m_currentAtgeirHash;
+
+    public string m_bagOverrideItem = "";
+    public int m_bagOverrideHash;
     
     public GameObject? m_bagInstance;
     private GameObject? m_lanternInstance;
@@ -70,6 +73,7 @@ public class BagEquipment : MonoBehaviour
         
         m_currentBagItem?.SetEquipped(this);
         m_currentBagItem?.OnEquip();
+        
         SetBagItem(m_currentBagItem?.m_dropPrefab.name ?? "");
 
         if (m_currentBagItem is Quiver quiver)
@@ -166,6 +170,14 @@ public class BagEquipment : MonoBehaviour
         m_nview.GetZDO().Set(BagVars.Bag, bagHash);
     }
 
+    public void SetBagOverrideItem(string item)
+    {
+        m_bagOverrideItem = item;
+        var bagHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
+        if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
+        m_nview.GetZDO().Set(BagVars.BagOverride, bagHash);
+    }
+    
     public void SetLanternItem(string item)
     {
         m_lanternItem = item;
@@ -190,6 +202,14 @@ public class BagEquipment : MonoBehaviour
             Destroy(m_bagInstance);
             m_bagInstance = null;
             m_lanternInstance = null;
+            m_pickaxeInstance = null;
+            m_meleeInstance = null;
+            m_atgeirInstance = null;
+            m_hoeInstance = null;
+            m_cultivatorInstance = null;
+            m_arrowInstances.Clear();
+            m_hammerInstance = null;
+            m_fishingRodInstance = null;
         }
 
         m_currentBagHash = hash;
@@ -420,6 +440,9 @@ public class BagEquipment : MonoBehaviour
         int meleeHash = zdo?.GetInt(BagVars.Melee) ?? (string.IsNullOrEmpty(m_meleeItem) ? 0 :  m_meleeItem.GetStableHashCode());
         int atgeirHash = zdo?.GetInt(BagVars.Atgeir) ?? (string.IsNullOrEmpty(m_atgeirItem) ? 0 : m_atgeirItem.GetStableHashCode());
         
+        // int bagOverrideHash = zdo?.GetInt(BagVars.BagOverride) ?? (string.IsNullOrEmpty(m_bagOverrideItem) ? 0 : m_bagOverrideItem.GetStableHashCode());
+        // if (bagOverrideHash != 0) bagHash = bagOverrideHash;
+        
         SetBagEquipped(bagHash);
         SetLanternEquipped(lanternHash);
         SetPickaxeEquipped(pickaxeHash);
@@ -511,4 +534,5 @@ public static class BagVars
     public static readonly int Hoe = "ExtraSlot.Bag.Hoe".GetStableHashCode();
     public static readonly int Melee = "ExtraSlot.Bag.Melee".GetStableHashCode();
     public static readonly int Atgeir = "ExtraSlot.Bag.Atgeir".GetStableHashCode();
+    public static readonly int BagOverride = "ExtraSlot.Bag.BagOverride".GetStableHashCode();
 }

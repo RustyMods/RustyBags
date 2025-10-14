@@ -27,7 +27,7 @@ namespace RustyBags
         public static readonly ConfigSync ConfigSync = new(ModGUID) { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = ModVersion };
 
         public static RustyBagsPlugin instance = null!;
-        public static readonly Dir BagDir = new Dir(Paths.ConfigPath, "RustyBags");
+        public static readonly Dir BagDir = new (Paths.ConfigPath, "RustyBags");
         public void Awake()
         {
             instance = this;

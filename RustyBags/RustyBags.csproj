@@ -155,6 +155,7 @@
         <Content Include="Libs\ServerSync.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
+        <Content Include="Thunderstore\icon.png" />
         <Content Include="Thunderstore\CHANGELOG.md"/>
         <Content Include="Thunderstore\manifest.json"/>
         <Content Include="Thunderstore\README.md" />
