@@ -15,7 +15,7 @@ public class Quiver : Bag
     {
         BagSetup setup = BagSetup.bags[m_shared.m_name];
         var size = setup.sizes.TryGetValue(m_quality, out var s) ? s : new BagSetup.Size(1, 1); 
-        inventory = new QuiverInventory("Quiver", m_shared.m_ammoType, Player.m_localPlayer?.GetInventory().m_bkg, size.width, size.height);
+        inventory = new QuiverInventory("Quiver", this, Player.m_localPlayer?.GetInventory().m_bkg, size.width, size.height);
     }
 
     protected override void UpdateAttachments()

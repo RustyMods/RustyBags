@@ -30,24 +30,44 @@ public static class Inventory_AddItem_Patch
 
 public class BagInventory : Inventory
 {
-    public BagInventory(string name, Sprite? bkg, int w, int h) : base(name, bkg, w, h)
+    private readonly Bag? bag;
+    public BagInventory(string name, Bag? bag, Sprite? bkg, int w, int h) : base(name, bkg, w, h)
     {
+        this.bag = bag;
     }
 
     public virtual bool CanAddItem(ItemDrop.ItemData item)
     {
-        var flag = item is not Bag;
-        if (!flag) Player.m_localPlayer.Message(MessageHud.MessageType.Center, Keys.CannotStackBags);
-        return flag;
+        if (item is not Bag)
+        {
+            if (bag is null) return true;
+            BagSetup.Restriction restrictions = bag.GetSetup().restrictConfig?.Value ?? BagSetup.Restriction.None;
+            if (restrictions is BagSetup.Restriction.None) return true;
+            switch (item.m_shared.m_itemType)
+            {
+                case ItemDrop.ItemData.ItemType.Consumable:
+                    return !restrictions.HasFlag(BagSetup.Restriction.NoConsumables);
+                case ItemDrop.ItemData.ItemType.Material:
+                    return !restrictions.HasFlag(BagSetup.Restriction.NoMaterials);
+                case ItemDrop.ItemData.ItemType.Fish:
+                    return !restrictions.HasFlag(BagSetup.Restriction.NoFishes);
+                case ItemDrop.ItemData.ItemType.Trophy:
+                    return !restrictions.HasFlag(BagSetup.Restriction.NoTrophies);
+                default:
+                    return true;
+            }
+        }
+        Player.m_localPlayer.Message(MessageHud.MessageType.Center, Keys.CannotStackBags);
+        return false;
     }
 }
 
 public class QuiverInventory : BagInventory
 {
     private readonly string ammoType;
-    public QuiverInventory(string name, string ammoType, Sprite? bkg, int w, int h) : base(name, bkg, w, h)
+    public QuiverInventory(string name, Bag bag, Sprite? bkg, int w, int h) : base(name, bag, bkg, w, h)
     {
-        this.ammoType = ammoType;
+        ammoType = bag.m_shared.m_ammoType;
     }
 
     public override bool CanAddItem(ItemDrop.ItemData item)

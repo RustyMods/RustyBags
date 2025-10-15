@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Reflection;
 using BepInEx;
 using BepInEx.Logging;
@@ -12,11 +10,12 @@ using ServerSync;
 
 namespace RustyBags
 {
+    [BepInDependency("Azumatt.AzuExtendedPlayerInventory", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInPlugin(ModGUID, ModName, ModVersion)]
     public class RustyBagsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "RustyBags";
-        internal const string ModVersion = "1.0.0";
+        internal const string ModVersion = "1.0.3";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         public static readonly string ConfigFileName = ModGUID + ".cfg";
@@ -177,9 +176,36 @@ namespace RustyBags
             mountainQuiverSetup.statusEffect.m_speedModifier = 0f;
             mountainQuiverSetup.statusEffect.m_inventoryWeightModifier = 0.5f;
             
+            var CrossbowQuiver = new Item("bags_bundle", "CrossbowQuiver_RS");
+            CrossbowQuiver.Name.English("Crossbow Quiver");
+            CrossbowQuiver.Description.English("It bears the scent of the wild. Each arrow drawn carries the spirit of the chase.");
+            CrossbowQuiver.RequiredItems.Add("WolfPelt", 20);
+            CrossbowQuiver.RequiredItems.Add("Silver", 20);
+            CrossbowQuiver.RequiredItems.Add("BjornHide", 5);
+            CrossbowQuiver.RequiredUpgradeItems.Add("Iron", 5, 2);
+            CrossbowQuiver.RequiredUpgradeItems.Add("LinenThread", 15, 2);
+            CrossbowQuiver.RequiredUpgradeItems.Add("Eitr", 5, 3);
+            CrossbowQuiver.RequiredUpgradeItems.Add("Carapace", 5, 3);
+            CrossbowQuiver.RequiredUpgradeItems.Add("FlametalNew", 5, 4);
+            CrossbowQuiver.RequiredUpgradeItems.Add("CharredBone", 15, 4);
+            var crossbowSetup = new BagSetup(CrossbowQuiver, 8, 1, true);
+            crossbowSetup.AddSizePerQuality(8, 2, 2);
+            crossbowSetup.AddSizePerQuality(8, 3, 3);
+            crossbowSetup.AddSizePerQuality(8, 4, 4);
+            CrossbowQuiver.Crafting.Add(CraftingTable.Forge, 1);
+            crossbowSetup.statusEffect.m_skillLevel = Skills.SkillType.Crossbows;
+            crossbowSetup.statusEffect.m_skillLevelModifier = 10f;
+            crossbowSetup.statusEffect.m_speedModifier = 0f;
+            
             Configs.Setup();
             Keys.Write();
             Localizer.Load();
+
+            if (AzuExtendedPlayerInventory.API.IsLoaded())
+            {
+                AzuExtendedPlayerInventory.API.AddSlot("Bag", player => player.GetBag(), item => item is Bag, 1);
+            }
+            
             Assembly assembly = Assembly.GetExecutingAssembly();
             _harmony.PatchAll(assembly);
         }

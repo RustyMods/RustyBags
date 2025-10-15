@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 using System.Text.RegularExpressions;
 using BepInEx.Configuration;
 using HarmonyLib;
@@ -10,6 +12,7 @@ using Managers;
 using RustyBags.Managers;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 namespace RustyBags;
@@ -101,40 +104,38 @@ public static class BagExtensions
         }
     }
 
-    // TODO: try to learn how to make transpiler for this
-    // on DoCrafting, item is removed and new item is added, but custom data is not copied over
-    // thus, losing contents of inventory
-    private static ItemDrop.ItemData? m_craftUpgradeItem;
-
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.DoCrafting))]
-    private static class InventoryGui_DoCraft_Patch
+    private static class InventoryGui_DoCraft_Transpile
     {
         [UsedImplicitly]
-        private static void Prefix(InventoryGui __instance)
+        private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            m_craftUpgradeItem = null;
-            if (__instance.m_craftUpgradeItem is not Bag) return;
-            m_craftUpgradeItem = __instance.m_craftUpgradeItem;
-        }
-    }
-
-    [HarmonyPatch(typeof(Inventory), nameof(Inventory.AddItem), typeof(string), typeof(int), typeof(int), typeof(int), typeof(long), typeof(string), typeof(Vector2i), typeof(bool))]
-    private static class Inventory_AddItem_Patch
-    {
-        [UsedImplicitly]
-        private static void Postfix(ref ItemDrop.ItemData __result)
-        {
-            if (m_craftUpgradeItem == null || __result is not Bag bag) return;
-            if (m_craftUpgradeItem.m_shared.m_name != bag.m_shared.m_name)
+            MethodInfo? targetMethod = AccessTools.Method(typeof(Inventory), nameof(Inventory.AddItem),
+                new[]
+                {
+                    typeof(string), typeof(int), typeof(int), typeof(int), typeof(long), typeof(string),
+                    typeof(Vector2i), typeof(bool)
+                });
+            MethodInfo? method = AccessTools.Method(typeof(InventoryGui_DoCraft_Transpile), nameof(AddCustomData));
+            CodeInstruction[] newInstructions = new[]
             {
-                m_craftUpgradeItem = null;
-                return;
-            }
+                new CodeInstruction(OpCodes.Dup),
+                new CodeInstruction(OpCodes.Ldarg_0),
+                new CodeInstruction(OpCodes.Call, method)
+            };
+            return new CodeMatcher(instructions)
+                .Start()
+                .MatchStartForward(new CodeMatch(OpCodes.Callvirt, targetMethod))
+                .Advance(1)
+                .Insert(newInstructions)
+                .InstructionEnumeration();
+        }
 
-            bag.m_customData = m_craftUpgradeItem.m_customData;
+        public static void AddCustomData(ItemDrop.ItemData? item, InventoryGui instance)
+        {
+            if (item is not Bag bag || instance.m_craftUpgradeItem is not Bag oldBag) return;
+            bag.m_customData = new(oldBag.m_customData);
             bag.Load();
-
-            m_craftUpgradeItem = null;
         }
     }
 
@@ -188,7 +189,7 @@ public static class BagExtensions
         [UsedImplicitly]
         private static bool Prefix(InventoryGui __instance, Player player) => __instance.UpdateBag(player);
     }
-
+    
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.OnStackAll))]
     private static class InventoryGui_OnStackAll_Patch
     {
@@ -214,65 +215,82 @@ public static class BagExtensions
     }
 
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.HaveRepairableItems))]
-    private static class InventoryGui_HaveRepairableItems_Patch
+    private static class InventoryGui_HaveRepairableItems_Transpiler
     {
         [UsedImplicitly]
-        private static void Postfix(InventoryGui __instance, ref bool __result)
+        private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            if (__result || Player.m_localPlayer == null || Player.m_localPlayer.GetBag() is not { } bag) return;
-            __instance.m_tempWornItems.Clear();
-            bag.inventory.GetWornItems(__instance.m_tempWornItems);
-            foreach (var item in __instance.m_tempWornItems)
+            MethodInfo? target = AccessTools.Method(typeof(Inventory), nameof(Inventory.GetWornItems));
+            MethodInfo? method = AccessTools.Method(typeof(BagExtensions), nameof(GetBagWornItems));
+            var newInstructions = new[]
             {
-                if (!__instance.CanRepair(item)) continue;
-                __result = true;
-                return;
-            }
+                new CodeInstruction(OpCodes.Ldarg_0),
+                new CodeInstruction(OpCodes.Call, method)
+            };
+
+            return new CodeMatcher(instructions)
+                .Start()
+                .MatchStartForward(new CodeMatch(OpCodes.Callvirt, target))
+                .Advance(1)
+                .Insert(newInstructions)
+                .InstructionEnumeration();
         }
+    }
+    
+    public static void GetBagWornItems(InventoryGui instance)
+    {
+        if (Player.m_localPlayer.GetBag() is not { } bag) return;
+        bag.inventory.GetWornItems(instance.m_tempWornItems);
     }
 
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.RepairOneItem))]
-    private static class InventoryGui_RepairOneItem_Patch
+    private static class InventoryGui_RepairOneItem_Transpiler
     {
         [UsedImplicitly]
-        private static bool Prefix(InventoryGui __instance)
+        private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            if (Player.m_localPlayer == null || Player.m_localPlayer.GetBag() is not { } bag) return true;
-            CraftingStation? currentCraftingStation = Player.m_localPlayer.GetCurrentCraftingStation();
-            if ((currentCraftingStation == null && !Player.m_localPlayer.NoCostCheat()) || (currentCraftingStation && !currentCraftingStation.CheckUsable(Player.m_localPlayer, false))) return false;
-            
-            __instance.m_tempWornItems.Clear();
-            Player.m_localPlayer.GetInventory().GetWornItems(__instance.m_tempWornItems);
-            bag.inventory.GetWornItems(__instance.m_tempWornItems);
-    
-            foreach (var tempWornItem in __instance.m_tempWornItems)
+            MethodInfo? target = AccessTools.Method(typeof(Inventory), nameof(Inventory.GetWornItems));
+            MethodInfo? method = AccessTools.Method(typeof(BagExtensions), nameof(GetBagWornItems));
+            CodeInstruction[] newInstructions = new[]
             {
-                if (!__instance.CanRepair(tempWornItem)) continue;
-                
-                Player.m_localPlayer.RaiseSkill(Skills.SkillType.Crafting, (float)(1.0 - tempWornItem.m_durability / (double)tempWornItem.GetMaxDurability()));
-                tempWornItem.m_durability = tempWornItem.GetMaxDurability();
-                if (currentCraftingStation) currentCraftingStation.m_repairItemDoneEffects.Create(currentCraftingStation.transform.position, Quaternion.identity);
-                Player.m_localPlayer.Message(MessageHud.MessageType.Center, Localization.instance.Localize("$msg_repaired", tempWornItem.m_shared.m_name));
-                return false;
-            }
-            Player.m_localPlayer.Message(MessageHud.MessageType.Center, "No more item to repair");
-            return false;
+                new CodeInstruction(OpCodes.Ldarg_0),
+                new CodeInstruction(OpCodes.Call, method)
+            };
+
+            return new CodeMatcher(instructions)
+                .Start()
+                .MatchStartForward(new CodeMatch(OpCodes.Callvirt, target))
+                .Advance(1)
+                .Insert(newInstructions)
+                .InstructionEnumeration();
         }
     }
 }
 
 public class BagSetup
 {
+    [Flags]
+    public enum Restriction
+    {
+        None = 0, 
+        NoMaterials = 1, 
+        NoConsumables = 2, 
+        NoTrophies = 4, 
+        NoFishes = 8
+    }
+    
     public static readonly Dictionary<string, BagSetup> bags = new();
 
     public readonly bool isQuiver;
     public readonly Dictionary<int, Size> sizes = new();
     public readonly SE_Bag statusEffect;
-    private readonly string sharedName;
+    public readonly string englishName;
+    public readonly ConfigEntry<Restriction>? restrictConfig;
 
     public BagSetup(Item item, int width, int height, bool isQuiver = false, bool replaceShader = true)
     {
-        sharedName = $"${item.Name.Key}";
+        var sharedName = $"${item.Name.Key}";
+        englishName = new Regex(@"[=\n\t\\""\'\[\]]*").Replace(Item.english.Localize(sharedName), "").Trim();
         sizes[1] = new Size(width, height);
         bags[sharedName] = this;
         this.isQuiver = isQuiver;
@@ -287,7 +305,7 @@ public class BagSetup
         drop.m_itemData = new Bag(data);
         drop.m_itemData.m_dropPrefab = item.Prefab;
         drop.m_itemData.m_shared.m_equipStatusEffect = statusEffect;
-        
+        if (!isQuiver) restrictConfig = Configs.config(englishName, "Restrictions", Restriction.None, "Set restrictions");
         if(replaceShader) MaterialReplacer.RegisterGameObjectForShaderSwap(item.Prefab, MaterialReplacer.ShaderType.CustomCreature);
     }
 
@@ -298,24 +316,27 @@ public class BagSetup
 
     public void SetupConfigs()
     {
-        var englishName = new Regex(@"[=\n\t\\""\'\[\]]*").Replace(Item.english.Localize(sharedName), "").Trim();
         foreach (var size in sizes)
         {
-            var config = Configs.config(englishName, $"Inventory Size Qlty.{size.Key}",
+            ConfigEntry<string> config = Configs.config(englishName, $"Inventory Size Qlty.{size.Key}",
                 string.Join("x", size.Value.width, size.Value.height), new ConfigDescription(
                     $"Setup inventory size for quality {size.Key}, width x height", null, new Configs.ConfigurationManagerAttributes()
                     {
                         CustomDrawer = Size.Draw
                     }));
-            config.SettingChanged += (_, _) =>
+            config.SettingChanged += (_, _) => OnConfigChange();
+            OnConfigChange();
+            
+            void OnConfigChange()
             {
-                var values = config.Value.Split('x');
+                string[] values = config.Value.Split('x');
                 if (values.Length != 2) return;
                 if (!int.TryParse(values[0], out int width) || !int.TryParse(values[1], out int height)) return;
                 sizes[size.Key].width = width;
                 sizes[size.Key].height = height;
-            };
+            }
         }
+        statusEffect.SetupConfigs();
     }
 
     public class Size
@@ -372,7 +393,7 @@ public class BagSetup
 public class Bag : ItemDrop.ItemData
 {
     private const string BAG_DATA_KEY = "RustyBag.CustomData.Inventory.Data";
-    public BagInventory inventory = new("Bag", null, 8, 4);
+    public BagInventory inventory = new("Bag", null, null, 8, 4);
     private bool isLoaded;
     private readonly float baseWeight;
 
@@ -482,10 +503,12 @@ public class Bag : ItemDrop.ItemData
 
     protected virtual void SetupInventory()
     {
-        BagSetup setup = BagSetup.bags[m_shared.m_name];
+        BagSetup setup = GetSetup();
         BagSetup.Size size = setup.sizes.TryGetValue(m_quality, out var s) ? s : new BagSetup.Size(1, 1); 
-        inventory = new BagInventory("Bag", Player.m_localPlayer?.GetInventory().m_bkg, size.width, size.height);
+        inventory = new BagInventory("Bag", this, Player.m_localPlayer?.GetInventory().m_bkg, size.width, size.height);
     }
+    
+    public BagSetup GetSetup() => BagSetup.bags[m_shared.m_name];
 
     public void UpdateWeight()
     {
@@ -518,23 +541,27 @@ public class Bag : ItemDrop.ItemData
     }
 
     [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.Pickup))]
-    private static class Humanoid_Pickup_Patch
+    private static class Humanoid_Pickup_Transpiler
     {
-        private static Action? OnPickup;
         [UsedImplicitly]
-        private static void Prefix(Humanoid __instance)
+        private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            if (!Configs.AutoStack) return;
-            if (__instance.GetBag() is not { } bag) return;
-            OnPickup = () => bag.GrabAll(__instance.m_inventory);
-            __instance.m_inventory.m_onChanged += OnPickup;
+            MethodInfo? targetMethod = AccessTools.Method(typeof(Inventory), nameof(Inventory.AddItem), new[]{typeof(ItemDrop.ItemData)});
+            MethodInfo? newMethod = AccessTools.Method(typeof(Humanoid_Pickup_Transpiler), nameof(AddIntoBag));
+
+            return new CodeMatcher(instructions)
+                .Start()
+                .MatchStartForward(new CodeMatch(OpCodes.Callvirt, targetMethod))
+                .Insert(new CodeInstruction(OpCodes.Ldarg_0))
+                .Advance(1)
+                .Set(OpCodes.Call, newMethod)
+                .InstructionEnumeration();
         }
-        
-        [UsedImplicitly]
-        private static void Postfix(Humanoid __instance)
+
+        public static bool AddIntoBag(Inventory inventory, ItemDrop.ItemData item, Humanoid instance)
         {
-            if (OnPickup != null) __instance.m_inventory.m_onChanged -= OnPickup;
-            OnPickup = null;
+            if (Configs.AutoStack && instance.GetBag() is { } bag && bag.inventory.ContainsItemByName(item.m_shared.m_name)) return bag.inventory.AddItem(item);
+            return inventory.AddItem(item);
         }
     }
 }

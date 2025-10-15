@@ -1,8 +1,7 @@
-﻿using HarmonyLib;
+﻿using System.Collections.Generic;
+using System.Reflection.Emit;
+using HarmonyLib;
 using JetBrains.Annotations;
-using TMPro;
-using UnityEngine;
-using UnityEngine.UI;
 
 namespace RustyBags;
 
@@ -207,49 +206,75 @@ public static class BagCraft
         }
     }
 
+    // [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.SetupRequirement))]
+    // private static class InventoryGuiSetupRequirementPatch
+    // {
+    //     [UsedImplicitly]
+    //     private static bool Prefix(Transform elementRoot, Piece.Requirement req, Player player, bool craft, int quality, int craftMultiplier, ref bool __result)
+    //     {
+    //         if (player.GetBag() is not { } bag) return true;
+    //         
+    //         Image icon = elementRoot.transform.Find("res_icon").GetComponent<Image>();
+    //         TMP_Text name = elementRoot.transform.Find("res_name").GetComponent<TMP_Text>();
+    //         TMP_Text amount = elementRoot.transform.Find("res_amount").GetComponent<TMP_Text>();
+    //         UITooltip tooltip = elementRoot.GetComponent<UITooltip>();
+    //
+    //         __result = true;
+    //         if (req.m_resItem == null) return false;
+    //         
+    //         icon.gameObject.SetActive(true);
+    //         name.gameObject.SetActive(true);
+    //         amount.gameObject.SetActive(true);
+    //         icon.sprite = req.m_resItem.m_itemData.GetIcon();
+    //         icon.color = Color.white;
+    //         tooltip.m_text = Localization.instance.Localize(req.m_resItem.m_itemData.m_shared.m_name);
+    //         name.text = Localization.instance.Localize(req.m_resItem.m_itemData.m_shared.m_name);
+    //         
+    //         //TODO : learn how to transpile this
+    //         int count = bag.inventory.CountItems(req.m_resItem.m_itemData.m_shared.m_name);
+    //         count += player.GetInventory().CountItems(req.m_resItem.m_itemData.m_shared.m_name);
+    //         // so it adds the bag to the total count
+    //         
+    //         int requiredAmount = req.GetAmount(quality) * craftMultiplier;
+    //         if (requiredAmount <= 0)
+    //         {
+    //             InventoryGui.HideRequirement(elementRoot);
+    //             __result = false;
+    //             return false;
+    //         }
+    //         
+    //         amount.text = requiredAmount.ToString();
+    //         if (count < requiredAmount && (!craft && !ZoneSystem.instance.GetGlobalKey(GlobalKeys.NoBuildCost) || craft && !ZoneSystem.instance.GetGlobalKey(GlobalKeys.NoCraftCost)))
+    //             amount.color = Mathf.Sin(Time.time * 10f) > 0.0 ? Color.red : Color.white;
+    //         else amount.color = Color.white;
+    //
+    //         return false;
+    //     }
+    // }
+
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.SetupRequirement))]
-    private static class InventoryGuiSetupRequirementPatch
+    private static class InventoryGuiSetupRequirementTranspiler
     {
         [UsedImplicitly]
-        private static bool Prefix(Transform elementRoot, Piece.Requirement req, Player player, bool craft, int quality, int craftMultiplier, ref bool __result)
+        private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            if (player.GetBag() is not { } bag) return true;
-            
-            Image icon = elementRoot.transform.Find("res_icon").GetComponent<Image>();
-            TMP_Text name = elementRoot.transform.Find("res_name").GetComponent<TMP_Text>();
-            TMP_Text amount = elementRoot.transform.Find("res_amount").GetComponent<TMP_Text>();
-            UITooltip tooltip = elementRoot.GetComponent<UITooltip>();
+            var target = AccessTools.Method(typeof(Inventory), nameof(Inventory.CountItems));
+            var call = AccessTools.Method(typeof(InventoryGuiSetupRequirementTranspiler), nameof(AddBagCount));
+            return new CodeMatcher(instructions)
+                .Start()
+                .MatchStartForward(new CodeMatch(OpCodes.Callvirt, target))
+                .Insert(new CodeInstruction(OpCodes.Ldarg_2))
+                .Advance(1)
+                .Set(OpCodes.Call, call)
+                .InstructionEnumeration();
+        }
 
-            __result = true;
-            if (req.m_resItem == null) return false;
-            
-            icon.gameObject.SetActive(true);
-            name.gameObject.SetActive(true);
-            amount.gameObject.SetActive(true);
-            icon.sprite = req.m_resItem.m_itemData.GetIcon();
-            icon.color = Color.white;
-            tooltip.m_text = Localization.instance.Localize(req.m_resItem.m_itemData.m_shared.m_name);
-            name.text = Localization.instance.Localize(req.m_resItem.m_itemData.m_shared.m_name);
-            
-            //TODO : learn how to transpile this
-            int count = bag.inventory.CountItems(req.m_resItem.m_itemData.m_shared.m_name);
-            count += player.GetInventory().CountItems(req.m_resItem.m_itemData.m_shared.m_name);
-            // so it adds the bag to the total count
-            
-            int requiredAmount = req.GetAmount(quality) * craftMultiplier;
-            if (requiredAmount <= 0)
-            {
-                InventoryGui.HideRequirement(elementRoot);
-                __result = false;
-                return false;
-            }
-            
-            amount.text = requiredAmount.ToString();
-            if (count < requiredAmount && (!craft && !ZoneSystem.instance.GetGlobalKey(GlobalKeys.NoBuildCost) || craft && !ZoneSystem.instance.GetGlobalKey(GlobalKeys.NoCraftCost)))
-                amount.color = Mathf.Sin(Time.time * 10f) > 0.0 ? Color.red : Color.white;
-            else amount.color = Color.white;
-
-            return false;
+        private static int AddBagCount(Inventory inventory, string sharedName, int quality, bool worldLevel, Player player)
+        {
+            int num1 = inventory.CountItems(sharedName);
+            if (player.GetBag() is not { } bag) return num1;
+            num1 += bag.inventory.CountItems(sharedName);
+            return num1;
         }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using HarmonyLib;
 using JetBrains.Annotations;
-using RustyBags.Managers;
 using UnityEngine;
 
 namespace RustyBags;
@@ -37,9 +36,6 @@ public class BagEquipment : MonoBehaviour
     public int m_currentMeleeHash;
     public int m_currentHoeHash;
     public int m_currentAtgeirHash;
-
-    public string m_bagOverrideItem = "";
-    public int m_bagOverrideHash;
     
     public GameObject? m_bagInstance;
     private GameObject? m_lanternInstance;
@@ -169,14 +165,6 @@ public class BagEquipment : MonoBehaviour
         if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
         m_nview.GetZDO().Set(BagVars.Bag, bagHash);
     }
-
-    public void SetBagOverrideItem(string item)
-    {
-        m_bagOverrideItem = item;
-        var bagHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
-        if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
-        m_nview.GetZDO().Set(BagVars.BagOverride, bagHash);
-    }
     
     public void SetLanternItem(string item)
     {
@@ -194,25 +182,32 @@ public class BagEquipment : MonoBehaviour
         m_nview.GetZDO().Set(BagVars.Pickaxe, pickaxeHash);
     }
 
-    public void SetBagEquipped(int hash)
+    private GameObject? AttachItem(int hash, Transform joint)
     {
-        if (m_currentBagHash == hash) return;
-        if (m_bagInstance != null)
-        {
-            Destroy(m_bagInstance);
-            m_bagInstance = null;
-            m_lanternInstance = null;
-            m_pickaxeInstance = null;
-            m_meleeInstance = null;
-            m_atgeirInstance = null;
-            m_hoeInstance = null;
-            m_cultivatorInstance = null;
-            m_arrowInstances.Clear();
-            m_hammerInstance = null;
-            m_fishingRodInstance = null;
-        }
+        var attach = ObjectDB.instance?.GetItemPrefab(hash)?.transform.Find("attach");
+        if (attach == null) return null;
+        var go = Instantiate(attach.gameObject, joint);
+        VisEquipment.CleanupInstance(go);
+        go.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+        return go;
+    }
 
-        m_currentBagHash = hash;
+    public void ClearInstances()
+    {
+        m_bagInstance = null;
+        m_lanternInstance = null;
+        m_pickaxeInstance = null;
+        m_meleeInstance = null;
+        m_atgeirInstance = null;
+        m_hoeInstance = null;
+        m_cultivatorInstance = null;
+        m_arrowInstances.Clear();
+        m_hammerInstance = null;
+        m_fishingRodInstance = null;
+    }
+
+    public void ResetHashes()
+    {
         m_currentLanternHash = 0;
         m_currentPickaxeHash = 0;
         m_currentFishingRodHash = 0;
@@ -223,6 +218,19 @@ public class BagEquipment : MonoBehaviour
         m_currentAtgeirHash = 0;
         m_currentArrowHash = 0;
         m_currentArrowStack = 0;
+    }
+
+    public void SetBagEquipped(int hash)
+    {
+        if (m_currentBagHash == hash) return;
+        if (m_bagInstance != null)
+        {
+            Destroy(m_bagInstance);
+            ClearInstances();
+        }
+
+        m_currentBagHash = hash;
+        ResetHashes();
         
         if (hash != 0)
         {
@@ -232,104 +240,52 @@ public class BagEquipment : MonoBehaviour
 
     public void SetHammerEquipped(int hash)
     {
-        if (m_currentHammerHash == hash) return;
-        if (m_bagInstance == null) return;
+        if (m_currentHammerHash == hash || m_bagInstance == null) return;
         if (m_hammerInstance) Destroy(m_hammerInstance);
         m_hammerInstance = null;
-
         m_currentHammerHash = hash;
-        if (hash == 0) return;
-        if (m_bagInstance.transform.Find("attach_hammer") is not { } attachHammer) return;
-        var prefab = ObjectDB.instance.GetItemPrefab(hash);
-        if (prefab == null) return;
-        var attach = prefab.transform.Find("attach");
-        if (attach == null) return;
-        
-        m_hammerInstance = Instantiate(attach.gameObject, attachHammer);
-        VisEquipment.CleanupInstance(m_hammerInstance);
-        m_hammerInstance.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+        if (hash == 0 || m_bagInstance.transform.Find("attach_hammer") is not { } attachHammer) return;
+        m_hammerInstance = AttachItem(hash, attachHammer);
     }
 
     public void SetAtgeirEquipped(int hash)
     {
-        if (m_currentAtgeirHash == hash) return;
-        if (m_bagInstance == null) return;
+        if (m_currentAtgeirHash == hash || m_bagInstance == null) return;
         if (m_atgeirInstance) Destroy(m_atgeirInstance);
         m_atgeirInstance = null;
-
         m_currentAtgeirHash = hash;
-        if (hash == 0) return;
-        if (m_bagInstance.transform.Find("attach_atgeir") is not { } attachAtgeir) return;
-        var prefab = ObjectDB.instance.GetItemPrefab(hash);
-        if (prefab == null) return;
-        var attach = prefab.transform.Find("attach");
-        if (attach == null) return;
-        
-        m_atgeirInstance = Instantiate(attach.gameObject, attachAtgeir);
-        VisEquipment.CleanupInstance(m_atgeirInstance);
-        m_atgeirInstance.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+        if (hash == 0 || m_bagInstance.transform.Find("attach_atgeir") is not { } attachAtgeir) return;
+        m_atgeirInstance = AttachItem(hash, attachAtgeir);
     }
 
     public void SetMeleeEquipped(int hash)
     {
-        if (m_currentMeleeHash == hash) return;
-        if (m_bagInstance == null) return;
+        if (m_currentMeleeHash == hash || m_bagInstance == null) return;
         if (m_meleeInstance) Destroy(m_meleeInstance);
         m_meleeInstance = null;
-
         m_currentMeleeHash = hash;
-        if (hash == 0) return;
-        if (m_bagInstance.transform.Find("attach_melee") is not { } attachMelee) return;
-        var prefab = ObjectDB.instance.GetItemPrefab(hash);
-        if (prefab == null) return;
-        var attach = prefab.transform.Find("attach");
-        if (attach == null) return;
-        
-        m_meleeInstance = Instantiate(attach.gameObject, attachMelee);
-        VisEquipment.CleanupInstance(m_meleeInstance);
-        m_meleeInstance.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+        if (hash == 0 || m_bagInstance.transform.Find("attach_melee") is not { } attachMelee) return;
+        m_meleeInstance = AttachItem(hash, attachMelee);
     }
 
     public void SetHoeEquipped(int hash)
     {
-        if (m_currentHoeHash == hash) return;
-        if (m_bagInstance == null) return;
+        if (m_currentHoeHash == hash || m_bagInstance == null) return;
         if (m_hoeInstance) Destroy(m_hoeInstance);
         m_hoeInstance = null;
-
         m_currentHoeHash = hash;
-        if (hash == 0) return;
-        if (m_bagInstance.transform.Find("attach_hoe") is not { } attachHoe) return;
-        var prefab = ObjectDB.instance.GetItemPrefab(hash);
-        if (prefab == null) return;
-        var attach = prefab.transform.Find("attach");
-        if (attach == null) return;
-        
-        m_hoeInstance = Instantiate(attach.gameObject, attachHoe);
-        VisEquipment.CleanupInstance(m_hoeInstance);
-        m_hoeInstance.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+        if (hash == 0 || m_bagInstance.transform.Find("attach_hoe") is not { } attachHoe) return;
+        m_hoeInstance = AttachItem(hash, attachHoe);
     }
 
     public void SetFishingRodEquipped(int hash)
     {
-        if (m_currentFishingRodHash == hash) return;
-        if (m_bagInstance == null) return;
+        if (m_currentFishingRodHash == hash || m_bagInstance == null) return;
         if (m_fishingRodInstance) Destroy(m_fishingRodInstance);
         m_fishingRodInstance = null;
-
         m_currentFishingRodHash = hash;
-        if (hash == 0) return;
-        if (m_bagInstance.transform.Find("attach_fishingrod") is not { } attachFishingRod) return;
-
-        var prefab = ObjectDB.instance.GetItemPrefab(hash);
-        if (prefab == null) return;
-        
-        var attach = prefab.transform.Find("attach");
-        if (attach == null) return;
-
-        m_fishingRodInstance = Instantiate(attach.gameObject, attachFishingRod);
-        VisEquipment.CleanupInstance(m_fishingRodInstance);
-        m_fishingRodInstance.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+        if (hash == 0 || m_bagInstance.transform.Find("attach_fishingrod") is not { } attachFishingRod) return;
+        m_fishingRodInstance = AttachItem(hash, attachFishingRod);
     }
     
     public void SetLanternEquipped(int hash)
@@ -340,88 +296,111 @@ public class BagEquipment : MonoBehaviour
         m_lanternInstance = null;
 
         m_currentLanternHash = hash;
-        if (hash == 0) return;
-        if (m_bagInstance.transform.Find("attach_lantern") is not { } attachLantern) return;
+        if (hash == 0 || m_bagInstance.transform.Find("attach_lantern") is not { } attachLantern) return;
         
-        var prefab = ObjectDB.instance.GetItemPrefab(hash);
-        if (prefab == null) return;
-        
-        var body = attachLantern.GetComponent<Rigidbody>();
-        var equipped = prefab.transform.Find("attach/equiped");
-        m_lanternInstance = Instantiate(equipped.gameObject, attachLantern);
-        m_lanternInstance.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
-        m_lanternInstance.SetActive(true);
-        if (m_lanternInstance.TryGetComponent(out ConfigurableJoint joint)) joint.connectedBody = body;
+        m_lanternInstance = m_visEquipment.AttachItem(hash, 0, attachLantern);
     }
 
     public void SetPickaxeEquipped(int hash)
     {
-        if (m_currentPickaxeHash == hash) return;
-        if (m_bagInstance == null) return;
+        if (m_currentPickaxeHash == hash || m_bagInstance == null) return;
         if (m_pickaxeInstance) Destroy(m_pickaxeInstance);
         m_pickaxeInstance = null;
         m_currentPickaxeHash = hash;
-        if (hash == 0) return;
-        if (m_bagInstance.transform.Find("attach_pickaxe") is not {} attachPickaxe) return;
-        var prefab = ObjectDB.instance.GetItemPrefab(hash);
-        if (prefab == null) return;
-        var attach = prefab.transform.Find("attach");
-        if (attach == null) return;
-        m_pickaxeInstance = Instantiate(attach.gameObject, attachPickaxe);
-        VisEquipment.CleanupInstance(m_pickaxeInstance);
-        m_pickaxeInstance.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+        if (hash == 0 || m_bagInstance.transform.Find("attach_pickaxe") is not {} attachPickaxe) return;
+        m_pickaxeInstance = AttachItem(hash, attachPickaxe);
     }
 
     public void SetCultivatorEquipped(int hash)
     {
-        if (m_currentCultivatorHash == hash) return;
-        if (m_bagInstance == null) return;
+        if (m_currentCultivatorHash == hash || m_bagInstance == null) return;
         if (m_cultivatorInstance) Destroy(m_cultivatorInstance);
         m_cultivatorInstance = null;
         m_currentCultivatorHash = hash;
-        if (hash == 0) return;
-        if (m_bagInstance.transform.Find("attach_cultivator") is not { } attachCultivator) return;
-        var prefab = ObjectDB.instance.GetItemPrefab(hash);
-        if (prefab == null) return;
-        var attach = prefab.transform.Find("attach");
-        if (attach == null) return;
-        m_cultivatorInstance = Instantiate(attach.gameObject, attachCultivator);
-        VisEquipment.CleanupInstance(m_cultivatorInstance);
-        m_cultivatorInstance.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+        if (hash == 0 || m_bagInstance.transform.Find("attach_cultivator") is not { } attachCultivator) return;
+        m_cultivatorInstance = AttachItem(hash, attachCultivator);
+    }
+
+    public void ClearArrowInstances()
+    {
+        foreach (var instance in m_arrowInstances)
+        {
+            if (m_visEquipment.m_lodGroup) Utils.RemoveFromLodgroup(m_visEquipment.m_lodGroup, instance);
+            Destroy(instance);
+        }
+        m_arrowInstances.Clear();
     }
 
     public void SetArrowEquipped(int hash, int stack)
     {
-        if (m_currentArrowHash == hash && m_currentArrowStack == stack) return;
-        if (m_bagInstance == null) return;
-        foreach (var instance in m_arrowInstances)
-        {
-            Destroy(instance);
-        }
-        m_arrowInstances.Clear();
+        if ((m_currentArrowHash == hash && m_currentArrowStack == stack) || m_bagInstance == null) return;
+
+        bool hashChanged = m_currentArrowHash != hash;
+        int previousStack = m_currentArrowStack;
+        
         m_currentArrowHash = hash;
         m_currentArrowStack = stack;
-        
-        if (m_bagInstance.transform.Find("Quiver/arrows") is not {} arrows) return;
-        if (hash == 0) return;
-        var prefab = ObjectDB.instance.GetItemPrefab(hash);
-        if (prefab == null) return;
-        var model = prefab.transform.GetChild(0).gameObject;
-        if (model == null) return;
 
-        int count = 0;
-
-        foreach (Transform child in arrows)
+        if (hash == 0 || m_bagInstance.transform.Find("attach_arrows") is not { } arrows)
         {
-            if (count >= stack) break;
-            var go = Instantiate(model, child);
-            VisEquipment.CleanupInstance(go);
-            go.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
-            go.transform.localScale *= 0.5f;
-            if (go.GetComponentInChildren<Light>() is {} light) Destroy(light.gameObject);
-            if (go.GetComponentInChildren<ParticleSystem>() is {} ps) Destroy(ps.gameObject);
-            m_arrowInstances.Add(go);
-            ++count;
+            ClearArrowInstances();
+            return;
+        }
+
+        GameObject? model = ObjectDB.instance.GetItemPrefab(hash)?.transform.GetChild(0)?.gameObject;
+        if (model == null)
+        {
+            ClearArrowInstances();
+            return;
+        }
+
+        if (hashChanged)
+        {
+            ClearArrowInstances();
+            int count = 0;
+
+            foreach (Transform child in arrows)
+            {
+                if (count >= stack) break;
+                GameObject? go = Instantiate(model, child);
+                VisEquipment.CleanupInstance(go);
+                go.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+                if (go.GetComponentInChildren<Light>() is { } light) light.enabled = false;
+                if (go.GetComponentInChildren<ParticleSystem>() is {} ps) ps.Stop();
+                m_arrowInstances.Add(go);
+                ++count;
+            }
+        }
+        else
+        {
+            if (m_currentArrowStack < previousStack)
+            {
+                int difference = previousStack - m_currentArrowStack;
+                for (int i = m_arrowInstances.Count - 1; i >= 0 && difference > 0; i--)
+                {
+                    GameObject? instance = m_arrowInstances[i];
+                    if (m_visEquipment.m_lodGroup) Utils.RemoveFromLodgroup(m_visEquipment.m_lodGroup, instance);
+                    Destroy(instance);
+                    m_arrowInstances.RemoveAt(i);
+                    --difference;
+                }
+            }
+            else
+            {
+                int difference = m_currentArrowStack - previousStack;
+                foreach (Transform child in arrows)
+                {
+                    if (difference == 0) break;
+                    if (child.childCount > 0) continue;
+                    GameObject? go = Instantiate(model, child);
+                    VisEquipment.CleanupInstance(go);
+                    go.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+                    if (go.GetComponentInChildren<Light>() is { } light) light.enabled = false;
+                    if (go.GetComponentInChildren<ParticleSystem>() is {} ps) ps.Stop();
+                    m_arrowInstances.Add(go);
+                    --difference;
+                }
+            }
         }
     }
     
@@ -439,9 +418,6 @@ public class BagEquipment : MonoBehaviour
         int hoeHash = zdo?.GetInt(BagVars.Hoe) ?? (string.IsNullOrEmpty(m_hoeItem) ? 0 : m_hoeItem.GetStableHashCode());
         int meleeHash = zdo?.GetInt(BagVars.Melee) ?? (string.IsNullOrEmpty(m_meleeItem) ? 0 :  m_meleeItem.GetStableHashCode());
         int atgeirHash = zdo?.GetInt(BagVars.Atgeir) ?? (string.IsNullOrEmpty(m_atgeirItem) ? 0 : m_atgeirItem.GetStableHashCode());
-        
-        // int bagOverrideHash = zdo?.GetInt(BagVars.BagOverride) ?? (string.IsNullOrEmpty(m_bagOverrideItem) ? 0 : m_bagOverrideItem.GetStableHashCode());
-        // if (bagOverrideHash != 0) bagHash = bagOverrideHash;
         
         SetBagEquipped(bagHash);
         SetLanternEquipped(lanternHash);
@@ -534,5 +510,4 @@ public static class BagVars
     public static readonly int Hoe = "ExtraSlot.Bag.Hoe".GetStableHashCode();
     public static readonly int Melee = "ExtraSlot.Bag.Melee".GetStableHashCode();
     public static readonly int Atgeir = "ExtraSlot.Bag.Atgeir".GetStableHashCode();
-    public static readonly int BagOverride = "ExtraSlot.Bag.BagOverride".GetStableHashCode();
 }
