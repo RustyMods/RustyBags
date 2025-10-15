@@ -1,48 +1,43 @@
 ﻿using System.Collections.Generic;
+using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 using JetBrains.Annotations;
+using UnityEngine;
 
 namespace RustyBags;
 
 public static class BagCraft
 {
     [HarmonyPatch(typeof(Player), nameof(Player.HaveRequirementItems))]
-    private static class PlayerHaveRequirementItemsPatch
+    private static class Player_HaveRequirementItems_Transpiler
     {
         [UsedImplicitly]
-        private static void Postfix(Player __instance, Recipe piece, bool discover, int qualityLevel, int amount, ref bool __result)
+        private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            if (__result || discover || __instance.GetBag() is not {} bag) return;
-            
-            foreach (var resource in piece.m_resources)
+            MethodInfo? target = AccessTools.Method(typeof(Inventory), nameof(Inventory.CountItems));
+            MethodInfo? method = AccessTools.Method(typeof(Player_HaveRequirementItems_Transpiler), nameof(AddBagCount));
+            CodeInstruction[] newInstructions = new[]
             {
-                var item = resource.m_resItem;
-                if (item)
-                {
-                    int num1 = resource.GetAmount(qualityLevel) * amount;
-                    int num2 = 0;
-                    for (int quality = 1; quality < item.m_itemData.m_shared.m_maxQuality + 1; ++quality)
-                    {
-                        int num3 = bag.inventory.CountItems(item.m_itemData.m_shared.m_name, quality);
-                        num3 += __instance.m_inventory.CountItems(item.m_itemData.m_shared.m_name, quality);
-                        if (num3 > num2) num2 = num3;
-                    }
+                new CodeInstruction(OpCodes.Ldarg_0),
+                new CodeInstruction(OpCodes.Ldloc_2),
+                new CodeInstruction(OpCodes.Ldloc_S, 4),
+                new CodeInstruction(OpCodes.Call, method)
+            };
 
-                    if (piece.m_requireOnlyOneIngredient)
-                    {
-                        if (num2 >= num1)
-                        {
-                            __result = true;
-                            return;
-                        }
-                    }
+            return new CodeMatcher(instructions)
+                .Start()
+                .MatchStartForward(new CodeMatch(OpCodes.Callvirt, target))
+                .Advance(1)
+                .Insert(newInstructions)
+                .InstructionEnumeration();
+        }
 
-                    if (num2 < num1) return;
-                    __result = true;
-                    return;
-                }
-            }
+        public static int AddBagCount(int inventoryCount, Player player, Piece.Requirement resource, int quality)
+        {
+            if (player.GetBag() is not { } bag) return inventoryCount;
+            int bagCount = bag.inventory.CountItems(resource.m_resItem.m_itemData.m_shared.m_name, quality);
+            return inventoryCount + bagCount;
         }
     }
 
@@ -206,60 +201,14 @@ public static class BagCraft
         }
     }
 
-    // [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.SetupRequirement))]
-    // private static class InventoryGuiSetupRequirementPatch
-    // {
-    //     [UsedImplicitly]
-    //     private static bool Prefix(Transform elementRoot, Piece.Requirement req, Player player, bool craft, int quality, int craftMultiplier, ref bool __result)
-    //     {
-    //         if (player.GetBag() is not { } bag) return true;
-    //         
-    //         Image icon = elementRoot.transform.Find("res_icon").GetComponent<Image>();
-    //         TMP_Text name = elementRoot.transform.Find("res_name").GetComponent<TMP_Text>();
-    //         TMP_Text amount = elementRoot.transform.Find("res_amount").GetComponent<TMP_Text>();
-    //         UITooltip tooltip = elementRoot.GetComponent<UITooltip>();
-    //
-    //         __result = true;
-    //         if (req.m_resItem == null) return false;
-    //         
-    //         icon.gameObject.SetActive(true);
-    //         name.gameObject.SetActive(true);
-    //         amount.gameObject.SetActive(true);
-    //         icon.sprite = req.m_resItem.m_itemData.GetIcon();
-    //         icon.color = Color.white;
-    //         tooltip.m_text = Localization.instance.Localize(req.m_resItem.m_itemData.m_shared.m_name);
-    //         name.text = Localization.instance.Localize(req.m_resItem.m_itemData.m_shared.m_name);
-    //         
-    //         //TODO : learn how to transpile this
-    //         int count = bag.inventory.CountItems(req.m_resItem.m_itemData.m_shared.m_name);
-    //         count += player.GetInventory().CountItems(req.m_resItem.m_itemData.m_shared.m_name);
-    //         // so it adds the bag to the total count
-    //         
-    //         int requiredAmount = req.GetAmount(quality) * craftMultiplier;
-    //         if (requiredAmount <= 0)
-    //         {
-    //             InventoryGui.HideRequirement(elementRoot);
-    //             __result = false;
-    //             return false;
-    //         }
-    //         
-    //         amount.text = requiredAmount.ToString();
-    //         if (count < requiredAmount && (!craft && !ZoneSystem.instance.GetGlobalKey(GlobalKeys.NoBuildCost) || craft && !ZoneSystem.instance.GetGlobalKey(GlobalKeys.NoCraftCost)))
-    //             amount.color = Mathf.Sin(Time.time * 10f) > 0.0 ? Color.red : Color.white;
-    //         else amount.color = Color.white;
-    //
-    //         return false;
-    //     }
-    // }
-
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.SetupRequirement))]
     private static class InventoryGuiSetupRequirementTranspiler
     {
         [UsedImplicitly]
         private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            var target = AccessTools.Method(typeof(Inventory), nameof(Inventory.CountItems));
-            var call = AccessTools.Method(typeof(InventoryGuiSetupRequirementTranspiler), nameof(AddBagCount));
+            MethodInfo? target = AccessTools.Method(typeof(Inventory), nameof(Inventory.CountItems));
+            MethodInfo? call = AccessTools.Method(typeof(InventoryGuiSetupRequirementTranspiler), nameof(AddBagCount));
             return new CodeMatcher(instructions)
                 .Start()
                 .MatchStartForward(new CodeMatch(OpCodes.Callvirt, target))

@@ -1,3 +1,8 @@
+# 1.0.4
+- Compatibility with jewelcrafting jewel bag
+- Checks if `Take All` button is disabled (jewelcrafting disables this when jewel bag is open)
+- If `Take All` is disabled, do not show Rusty bag
+
 # 1.0.3
 - Added `Extended Player Inventory` API
 - If `EPI API` is installed, new slot is added: `Bag`

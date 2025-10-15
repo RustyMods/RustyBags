@@ -27,7 +27,6 @@ public static class Inventory_AddItem_Patch
     }
 }
 
-
 public class BagInventory : Inventory
 {
     private readonly Bag? bag;
@@ -72,8 +71,8 @@ public class QuiverInventory : BagInventory
 
     public override bool CanAddItem(ItemDrop.ItemData item)
     {
-        var flag = item.m_shared.m_ammoType == ammoType;
-        if (!flag) Player.m_localPlayer.Message(MessageHud.MessageType.Center, $"{Keys.Only} {ammoType} {Keys.Allowed}");
-        return flag;
+        if (item.m_shared.m_ammoType == ammoType) return true;
+        Player.m_localPlayer.Message(MessageHud.MessageType.Center, $"{Keys.Only} {ammoType} {Keys.Allowed}");
+        return false;
     }
 }

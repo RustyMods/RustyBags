@@ -137,10 +137,12 @@
         <Compile Include="Properties\AssemblyInfo.cs"/>
         <Compile Include="src\Bag.cs" />
         <Compile Include="src\BagCraft.cs" />
+        <Compile Include="src\BagGui.cs" />
         <Compile Include="src\BagInventory.cs" />
         <Compile Include="src\BagEquipment.cs" />
         <Compile Include="src\Quiver.cs" />
         <Compile Include="src\SE_Bag.cs" />
+        <Compile Include="src\Lanterns.cs" />
         <Compile Include="Utilities\Dir.cs" />
         <Compile Include="Utilities\Keys.cs" />
         <Compile Include="VersionHandshake.cs"/>

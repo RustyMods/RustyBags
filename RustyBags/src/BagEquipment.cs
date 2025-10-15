@@ -24,6 +24,8 @@ public class BagEquipment : MonoBehaviour
     public string m_meleeItem = "";
     public string m_hoeItem = "";
     public string m_atgeirItem = "";
+    public string m_oreItem = "";
+    public int m_oreStack;
     
     public int m_currentBagHash;
     public int m_currentLanternHash;
@@ -36,6 +38,8 @@ public class BagEquipment : MonoBehaviour
     public int m_currentMeleeHash;
     public int m_currentHoeHash;
     public int m_currentAtgeirHash;
+    public int m_currentOreHash;
+    public int m_currentOreStack;
     
     public GameObject? m_bagInstance;
     private GameObject? m_lanternInstance;
@@ -47,6 +51,7 @@ public class BagEquipment : MonoBehaviour
     private GameObject? m_meleeInstance;
     private GameObject? m_hoeInstance;
     private GameObject? m_atgeirInstance;
+    private readonly List<GameObject> m_oreInstances = new();
     
     public void Awake()
     {
@@ -63,8 +68,8 @@ public class BagEquipment : MonoBehaviour
         if (m_currentBagItem == bag) return false;
         m_currentBagItem?.SetEquipped(null);
         m_currentBagItem?.OnUnequip();
-        var oldSE = m_currentBagItem?.m_shared.m_equipStatusEffect;
-        var newSE = bag?.m_shared.m_equipStatusEffect;
+        StatusEffect? oldSE = m_currentBagItem?.m_shared.m_equipStatusEffect;
+        StatusEffect? newSE = bag?.m_shared.m_equipStatusEffect;
         m_currentBagItem = bag;
         
         m_currentBagItem?.SetEquipped(this);
@@ -86,6 +91,7 @@ public class BagEquipment : MonoBehaviour
             SetMeleeItem(m_currentBagItem?.melee?.m_dropPrefab.name ?? "");
             SetHoeItem(m_currentBagItem?.hoe?.m_dropPrefab.name ?? "");
             SetAtgeirItem(m_currentBagItem?.atgeir?.m_dropPrefab.name ?? "");
+            SetOreItem(m_currentBagItem?.ore?.m_dropPrefab.name ?? "", m_currentBagItem?.ore?.m_stack ?? 0);
             SetArrowItem("", 0);
         }
 
@@ -97,7 +103,7 @@ public class BagEquipment : MonoBehaviour
     {
         if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
         if (old != null) m_player.GetSEMan()?.RemoveStatusEffect(old.NameHash());
-        if (se != null) m_player.GetSEMan()?.AddStatusEffect(se, false, quality);
+        if (se != null) m_player.GetSEMan()?.AddStatusEffect(se.NameHash(), false, quality);
     }
 
     public void SetFishingRodItem(string item)
@@ -152,8 +158,8 @@ public class BagEquipment : MonoBehaviour
     {
         m_arrowItem = item;
         m_arrowStack = stack;
-        var arrowHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
         if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
+        var arrowHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
         m_nview.GetZDO().Set(BagVars.Arrow, arrowHash);
         m_nview.GetZDO().Set(BagVars.ArrowStack, stack);
     }
@@ -161,8 +167,8 @@ public class BagEquipment : MonoBehaviour
     public void SetBagItem(string item)
     {
         m_bagItem = item;
-        var bagHash = string.IsNullOrEmpty(m_bagItem) ? 0 : m_bagItem.GetStableHashCode();
         if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
+        var bagHash = string.IsNullOrEmpty(m_bagItem) ? 0 : m_bagItem.GetStableHashCode();
         m_nview.GetZDO().Set(BagVars.Bag, bagHash);
     }
     
@@ -182,11 +188,21 @@ public class BagEquipment : MonoBehaviour
         m_nview.GetZDO().Set(BagVars.Pickaxe, pickaxeHash);
     }
 
+    public void SetOreItem(string item, int stack)
+    {
+        m_oreItem = item;
+        m_oreStack = stack;
+        if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
+        var oreHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
+        m_nview.GetZDO().Set(BagVars.Ore, oreHash);
+        m_nview.GetZDO().Set(BagVars.OreStack, stack);
+    }
+
     private GameObject? AttachItem(int hash, Transform joint)
     {
-        var attach = ObjectDB.instance?.GetItemPrefab(hash)?.transform.Find("attach");
+        Transform? attach = ObjectDB.instance?.GetItemPrefab(hash)?.transform.Find("attach");
         if (attach == null) return null;
-        var go = Instantiate(attach.gameObject, joint);
+        GameObject? go = Instantiate(attach.gameObject, joint);
         VisEquipment.CleanupInstance(go);
         go.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
         return go;
@@ -204,6 +220,7 @@ public class BagEquipment : MonoBehaviour
         m_arrowInstances.Clear();
         m_hammerInstance = null;
         m_fishingRodInstance = null;
+        m_oreInstances.Clear();
     }
 
     public void ResetHashes()
@@ -218,6 +235,8 @@ public class BagEquipment : MonoBehaviour
         m_currentAtgeirHash = 0;
         m_currentArrowHash = 0;
         m_currentArrowStack = 0;
+        m_currentOreHash = 0;
+        m_currentOreStack = 0;
     }
 
     public void SetBagEquipped(int hash)
@@ -231,11 +250,9 @@ public class BagEquipment : MonoBehaviour
 
         m_currentBagHash = hash;
         ResetHashes();
-        
-        if (hash != 0)
-        {
-            m_bagInstance = m_visEquipment.AttachItem(hash, 0, m_visEquipment.m_backShield);
-        }
+
+        if (hash == 0) return;
+        m_bagInstance = m_visEquipment.AttachItem(hash, 0, m_visEquipment.m_backShield);
     }
 
     public void SetHammerEquipped(int hash)
@@ -323,12 +340,21 @@ public class BagEquipment : MonoBehaviour
 
     public void ClearArrowInstances()
     {
-        foreach (var instance in m_arrowInstances)
+        foreach (GameObject? instance in m_arrowInstances)
         {
             if (m_visEquipment.m_lodGroup) Utils.RemoveFromLodgroup(m_visEquipment.m_lodGroup, instance);
             Destroy(instance);
         }
         m_arrowInstances.Clear();
+    }
+
+    public void ClearOreInstances()
+    {
+        foreach (GameObject? instance in m_oreInstances)
+        {
+            if (instance) Destroy(instance);
+        }
+        m_oreInstances.Clear();
     }
 
     public void SetArrowEquipped(int hash, int stack)
@@ -403,6 +429,82 @@ public class BagEquipment : MonoBehaviour
             }
         }
     }
+
+    public void SetOreEquipped(int hash, int stack)
+    {
+        if ((m_currentOreHash == hash && m_currentOreStack == stack) || m_bagInstance == null) return;
+
+        bool hashChanged = m_currentOreHash != hash;
+        int previousStack = m_currentOreStack;
+        
+        m_currentOreHash = hash;
+        m_currentOreStack = stack;
+        bool open = stack > 0;
+        
+        if (hash == 0 || m_bagInstance.transform.Find("attach_ores") is not { } ores)
+        {
+            ClearOreInstances();
+            m_bagInstance.transform.Find("open")?.gameObject.SetActive(false);
+            m_bagInstance.transform.Find("closed")?.gameObject.SetActive(true);
+            return;
+        }
+
+        m_bagInstance.transform.Find("open")?.gameObject.SetActive(open);
+        m_bagInstance.transform.Find("closed")?.gameObject.SetActive(!open);
+        
+        GameObject? model = ObjectDB.instance.GetItemPrefab(hash)?.transform.GetChild(0)?.gameObject;
+        if (model == null)
+        {
+            ClearOreInstances();
+            return;
+        }
+        
+        if (hashChanged)
+        {
+            ClearOreInstances();
+            int count = 0;
+
+            foreach (Transform child in ores)
+            {
+                if (count >= stack) break;
+                GameObject? go = Instantiate(model, child);
+                VisEquipment.CleanupInstance(go);
+                go.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+                m_oreInstances.Add(go);
+                ++count;
+            }
+        }
+        else
+        {
+            if (m_currentOreStack < previousStack)
+            {
+                int difference = previousStack - m_currentOreStack;
+                for (int i = m_oreInstances.Count - 1; i >= 0 && difference > 0; i--)
+                {
+                    GameObject? instance = m_oreInstances[i];
+                    Destroy(instance);
+                    m_oreInstances.RemoveAt(i);
+                    --difference;
+                }
+            }
+            else
+            {
+                int difference = m_currentOreStack - previousStack;
+                foreach (Transform child in ores)
+                {
+                    if (difference == 0) break;
+                    if (child.childCount > 0) continue;
+                    GameObject? go = Instantiate(model, child);
+                    VisEquipment.CleanupInstance(go);
+                    go.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+                    m_oreInstances.Add(go);
+                    --difference;
+                }
+            }
+        }
+        
+
+    }
     
     public void UpdateVisuals()
     {
@@ -418,6 +520,8 @@ public class BagEquipment : MonoBehaviour
         int hoeHash = zdo?.GetInt(BagVars.Hoe) ?? (string.IsNullOrEmpty(m_hoeItem) ? 0 : m_hoeItem.GetStableHashCode());
         int meleeHash = zdo?.GetInt(BagVars.Melee) ?? (string.IsNullOrEmpty(m_meleeItem) ? 0 :  m_meleeItem.GetStableHashCode());
         int atgeirHash = zdo?.GetInt(BagVars.Atgeir) ?? (string.IsNullOrEmpty(m_atgeirItem) ? 0 : m_atgeirItem.GetStableHashCode());
+        int oreHash = zdo?.GetInt(BagVars.Ore) ?? (string.IsNullOrEmpty(m_oreItem) ? 0 : m_oreItem.GetStableHashCode());
+        int oreStack = zdo?.GetInt(BagVars.OreStack) ?? m_oreStack;
         
         SetBagEquipped(bagHash);
         SetLanternEquipped(lanternHash);
@@ -429,6 +533,7 @@ public class BagEquipment : MonoBehaviour
         SetHoeEquipped(hoeHash);
         SetMeleeEquipped(meleeHash);
         SetAtgeirEquipped(atgeirHash);
+        SetOreEquipped(oreHash, oreStack);
     }
     
     [HarmonyPatch(typeof(VisEquipment), nameof(VisEquipment.UpdateVisuals))]
@@ -481,7 +586,7 @@ public class BagEquipment : MonoBehaviour
             return false;
         }
     }
-
+    
     [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.UnequipItem))]
     private static class Humanoid_UnequipItem_Patch
     {
@@ -510,4 +615,6 @@ public static class BagVars
     public static readonly int Hoe = "ExtraSlot.Bag.Hoe".GetStableHashCode();
     public static readonly int Melee = "ExtraSlot.Bag.Melee".GetStableHashCode();
     public static readonly int Atgeir = "ExtraSlot.Bag.Atgeir".GetStableHashCode();
+    public static readonly int Ore = "ExtraSlot.Bag.Ore".GetStableHashCode();
+    public static readonly int OreStack = "ExtraSlot.Bag.OreStack".GetStableHashCode();
 }
