@@ -91,7 +91,7 @@ public class SE_OreBag : SE_Bag
     public override void ModifyInventoryWeight(Inventory inventory, ref float weight)
     {
         float total = 0f;
-        foreach (var item in inventory.GetAllItems())
+        foreach (ItemDrop.ItemData? item in inventory.GetAllItems())
         {
             var w = item.GetWeight();
             if (ores.Contains(item.m_shared.m_name))

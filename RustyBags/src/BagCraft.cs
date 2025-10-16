@@ -95,7 +95,7 @@ public static class BagCraft
             
             if (piece.m_craftingStation)
             {
-                var stationName = piece.m_craftingStation.m_name;
+                string? stationName = piece.m_craftingStation.m_name;
                 if (mode == Player.RequirementMode.CanAlmostBuild)
                 {
                     if (!__instance.m_knownStations.ContainsKey(stationName))
@@ -126,8 +126,8 @@ public static class BagCraft
 
             foreach (Piece.Requirement? resource in piece.m_resources)
             {
-                var item = resource.m_resItem;
-                var sharedName = item.m_itemData.m_shared.m_name;
+                ItemDrop? item = resource.m_resItem;
+                string? sharedName = item.m_itemData.m_shared.m_name;
                 if (item && resource.m_amount > 0)
                 {
                     switch (mode)
@@ -167,9 +167,9 @@ public static class BagCraft
         {
             if (__instance.GetBag() is not { } bag) return true;
 
-            foreach (var requirement in requirements)
+            foreach (Piece.Requirement requirement in requirements)
             {
-                var item = requirement.m_resItem;
+                ItemDrop? item = requirement.m_resItem;
                 if (item)
                 {
                     int amount = requirement.GetAmount(qualityLevel) * multiplier;

@@ -1,3 +1,9 @@
+# 1.0.5 
+- Added on-hover behavior to make sure bag container UI opens
+- for compatibility with jeweler bag and `Quick Stack Store Sort Trash Restock`
+- since QSSSTR hides take all button as well.
+- some more charms to deco your bag
+
 # 1.0.4
 - Compatibility with jewelcrafting jewel bag
 - Checks if `Take All` button is disabled (jewelcrafting disables this when jewel bag is open)

@@ -29,7 +29,7 @@ public static class BagGui
         [UsedImplicitly]
         private static bool Prefix(InventoryGui __instance, InventoryGrid grid, ItemDrop.ItemData? item, InventoryGrid.Modifier mod)
         {
-            if (item == null || item.m_shared.m_questItem || mod is not InventoryGrid.Modifier.Move || __instance.m_dragGo || m_currentBag == null || __instance.m_currentContainer != null || __instance.IsJewelBagOpen()) return true;
+            if (item == null || item.m_shared.m_questItem || mod is not InventoryGrid.Modifier.Move || __instance.m_dragGo || __instance.m_currentContainer != null || m_currentBag is not { isOpen: true }) return true;
             
             var localPlayer = Player.m_localPlayer;
             if (localPlayer.IsTeleporting()) return false;
@@ -111,7 +111,7 @@ public static class BagGui
         [UsedImplicitly]
         private static void Postfix(InventoryGui __instance)
         {
-            if (__instance.m_currentContainer != null || m_currentBag == null || __instance.IsJewelBagOpen()) return;
+            if (__instance.m_currentContainer != null || m_currentBag is not { isOpen: true }) return;
             __instance.m_containerWeight.text = Mathf.CeilToInt(m_currentBag.GetInventoryWeight()).ToString();
         }
     }
@@ -125,6 +125,13 @@ public static class BagGui
             if (m_currentBag?.Load() ?? false) Player.m_localPlayer?.GetInventory().Changed();;
         }
     }
+
+    [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Hide))]
+    private static class InventoryGui_Hide_Patch
+    {
+        [UsedImplicitly]
+        private static void Prefix() => m_currentBag?.Close();
+    }
     
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.UpdateContainer))]
     private static class InventoryGui_UpdateContainer_Patch
@@ -135,11 +142,32 @@ public static class BagGui
         {
             if (!__instance.m_animator.GetBool(visible)) return true;
             if (__instance.m_currentContainer != null || m_currentBag == null) return true;
-            if (__instance.IsJewelBagOpen()) return true;
+            
+            if (__instance.IsStackAllButtonHidden())
+            {
+                Vector2i pos = new Vector2i(Mathf.RoundToInt(ZInput.mousePosition.x), Mathf.RoundToInt(ZInput.mousePosition.y));
+                ItemDrop.ItemData? item = __instance.m_playerGrid.GetItem(pos);
+
+                if (item is not Bag && (ZInput.GetButton("Use") || ZInput.GetButton("JoyUse")))
+                {
+                    // if jewel bag or other items that use interact button, is interacted with, close bag.
+                    m_currentBag.Close();
+                }
+                else if (item == m_currentBag)
+                {
+                    m_currentBag.Open();
+                }
+                
+                if (!m_currentBag.isOpen) return true;
+            }
+            
+            m_currentBag.isOpen = true;
             
             __instance.m_container.gameObject.SetActive(true);
+            __instance.m_stackAllButton.gameObject.SetActive(true);
             __instance.m_containerGrid.UpdateInventory(m_currentBag.inventory, player, __instance.m_dragItem);
             __instance.m_containerName.text = Localization.instance.Localize(m_currentBag.m_shared.m_name);
+            
             if (__instance.m_firstContainerUpdate)
             {
                 __instance.m_containerGrid.ResetView();
@@ -151,7 +179,7 @@ public static class BagGui
         }
     }
 
-    private static bool IsJewelBagOpen(this InventoryGui instance)
+    private static bool IsStackAllButtonHidden(this InventoryGui instance)
     {
         // jewelcrafting and backpacks disables take all button,
         // so use this to check if jewelcrafting bag or backpack is active
@@ -165,7 +193,7 @@ public static class BagGui
         [UsedImplicitly]
         private static void Postfix(InventoryGui __instance)
         {
-            if (Player.m_localPlayer.IsTeleporting() || __instance.m_currentContainer != null || m_currentBag == null || __instance.IsJewelBagOpen()) return;
+            if (Player.m_localPlayer.IsTeleporting() || __instance.m_currentContainer != null || m_currentBag is not { isOpen: true }) return;
             m_currentBag.inventory.StackAll(Player.m_localPlayer.GetInventory());
         }
     }
@@ -176,7 +204,7 @@ public static class BagGui
         [UsedImplicitly]
         private static void Postfix(InventoryGui __instance)
         {
-            if (Player.m_localPlayer.IsTeleporting() || __instance.m_currentContainer != null || m_currentBag == null || __instance.IsJewelBagOpen()) return;
+            if (Player.m_localPlayer.IsTeleporting() || __instance.m_currentContainer != null || m_currentBag is not { isOpen: true }) return;
             __instance.SetupDragItem(null, null, 1);
             Inventory inventory = m_currentBag.inventory;
             Player.m_localPlayer.GetInventory().MoveAll(inventory);

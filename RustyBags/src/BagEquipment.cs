@@ -109,47 +109,47 @@ public class BagEquipment : MonoBehaviour
     public void SetFishingRodItem(string item)
     {
         m_fishingRodItem = item;
-        var fishingRodHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
         if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
+        int fishingRodHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
         m_nview.GetZDO().Set(BagVars.FishingRod, fishingRodHash);
     }
 
     public void SetCultivatorItem(string item)
     {
         m_cultivatorItem = item;
-        var cultivatorHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
         if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
+        int cultivatorHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
         m_nview.GetZDO().Set(BagVars.Cultivator, cultivatorHash);
     }
 
     public void SetHammerItem(string item)
     {
         m_hammerItem = item;
-        var hammerHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
         if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
+        int hammerHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
         m_nview.GetZDO().Set(BagVars.Hammer, hammerHash);
     }
 
     public void SetMeleeItem(string item)
     {
         m_meleeItem = item;
-        var meleeHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
         if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
+        int meleeHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
         m_nview.GetZDO().Set(BagVars.Melee, meleeHash);
     }
 
     public void SetAtgeirItem(string item)
     {
         m_atgeirItem = item;
-        var atgeirHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
         if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
+        int atgeirHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
         m_nview.GetZDO().Set(BagVars.Atgeir, atgeirHash);
     }
 
     public void SetHoeItem(string item)
     {
         m_hoeItem = item;
-        var hoeHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
+        int hoeHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
         if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
         m_nview.GetZDO().Set(BagVars.Hoe, hoeHash);
     }
@@ -159,7 +159,7 @@ public class BagEquipment : MonoBehaviour
         m_arrowItem = item;
         m_arrowStack = stack;
         if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
-        var arrowHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
+        int arrowHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
         m_nview.GetZDO().Set(BagVars.Arrow, arrowHash);
         m_nview.GetZDO().Set(BagVars.ArrowStack, stack);
     }
@@ -168,7 +168,7 @@ public class BagEquipment : MonoBehaviour
     {
         m_bagItem = item;
         if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
-        var bagHash = string.IsNullOrEmpty(m_bagItem) ? 0 : m_bagItem.GetStableHashCode();
+        int bagHash = string.IsNullOrEmpty(m_bagItem) ? 0 : m_bagItem.GetStableHashCode();
         m_nview.GetZDO().Set(BagVars.Bag, bagHash);
     }
     
@@ -176,7 +176,7 @@ public class BagEquipment : MonoBehaviour
     {
         m_lanternItem = item;
         if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
-        var lanternHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
+        int lanternHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
         m_nview.GetZDO().Set(BagVars.Lantern, lanternHash);
     }
 
@@ -184,7 +184,7 @@ public class BagEquipment : MonoBehaviour
     {
         m_pickaxeItem = item;
         if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
-        var pickaxeHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
+        int pickaxeHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
         m_nview.GetZDO().Set(BagVars.Pickaxe, pickaxeHash);
     }
 
@@ -193,12 +193,12 @@ public class BagEquipment : MonoBehaviour
         m_oreItem = item;
         m_oreStack = stack;
         if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
-        var oreHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
+        int oreHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
         m_nview.GetZDO().Set(BagVars.Ore, oreHash);
         m_nview.GetZDO().Set(BagVars.OreStack, stack);
     }
 
-    private GameObject? AttachItem(int hash, Transform joint)
+    private static GameObject? AttachItem(int hash, Transform joint)
     {
         Transform? attach = ObjectDB.instance?.GetItemPrefab(hash)?.transform.Find("attach");
         if (attach == null) return null;
@@ -247,10 +247,8 @@ public class BagEquipment : MonoBehaviour
             Destroy(m_bagInstance);
             ClearInstances();
         }
-
         m_currentBagHash = hash;
         ResetHashes();
-
         if (hash == 0) return;
         m_bagInstance = m_visEquipment.AttachItem(hash, 0, m_visEquipment.m_backShield);
     }
@@ -311,10 +309,8 @@ public class BagEquipment : MonoBehaviour
         if (m_bagInstance == null) return;
         if (m_lanternInstance) Destroy(m_lanternInstance);
         m_lanternInstance = null;
-
         m_currentLanternHash = hash;
         if (hash == 0 || m_bagInstance.transform.Find("attach_lantern") is not { } attachLantern) return;
-        
         m_lanternInstance = m_visEquipment.AttachItem(hash, 0, attachLantern);
     }
 

@@ -158,9 +158,13 @@ public class BagSetup
 public class Bag : ItemDrop.ItemData
 {
     private const string BAG_DATA_KEY = "RustyBag.CustomData.Inventory.Data";
+    private static readonly HashSet<string> lanternNames = new() { "$item_lantern" };
+    public static void RegisterLantern(string name) => lanternNames.Add(name);
+    
     public BagInventory inventory = new("Bag", null, null, 8, 4);
     private bool isLoaded;
     private readonly float baseWeight;
+    public bool isOpen;
 
     protected BagEquipment? m_bagEquipment;
     
@@ -181,6 +185,17 @@ public class Bag : ItemDrop.ItemData
         baseWeight = m_shared.m_weight;
     }
 
+    public void Open()
+    {
+        if (isOpen) return;
+        isOpen = true;
+    }
+    public void Close()
+    {
+        if (!isOpen) return;
+        isOpen = false;
+    }
+    
     public void OnEquip()
     {
         BagGui.m_currentBag = this;
@@ -222,7 +237,7 @@ public class Bag : ItemDrop.ItemData
                 ore = item;
             }
             if (!item.IsEquipable()) continue;
-            if (item.m_shared.m_name is "$item_lantern" or "$item_skulllantern_rs" && lantern == null)
+            if (lanternNames.Contains(item.m_shared.m_name) && lantern == null)
             {
                 lantern = item;
             }
@@ -256,7 +271,7 @@ public class Bag : ItemDrop.ItemData
             }
 
             if (lantern != null && fishingRod != null && cultivator != null && hoe != null && hammer != null &&
-                pickaxe != null && melee != null && atgeir != null) break;
+                pickaxe != null && melee != null && atgeir != null && ore != null) break;
         }
         
         m_bagEquipment?.SetLanternItem(lantern?.m_dropPrefab.name ?? "");
@@ -302,7 +317,7 @@ public class Bag : ItemDrop.ItemData
 
     public float GetInventoryWeight()
     {
-        var total = inventory.GetTotalWeight();
+        float total = inventory.GetTotalWeight();
         if (m_shared.m_equipStatusEffect is SE_Bag se) se.ModifyInventoryWeight(inventory, ref total);
         return total;
     }
