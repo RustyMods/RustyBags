@@ -42,6 +42,8 @@ public static class Lanterns
         lantern.Description.English("Crafted from the remains of Brenna");
         lantern.Crafting.Add(CraftingTable.Forge, 1);
         lantern.RequiredItems.Add("TrophySkeletonHildir", 1);
+        lantern.RequiredItems.Add("Bronze", 3);
+        lantern.RequiredItems.Add("Resin", 10);
         lantern.Configurable = Configurability.Disabled;
     }
 }

@@ -2,6 +2,7 @@
 - Compatibility with jewelcrafting jewel bag
 - Checks if `Take All` button is disabled (jewelcrafting disables this when jewel bag is open)
 - If `Take All` is disabled, do not show Rusty bag
+- Fixed bag not unequipping on death
 
 # 1.0.3
 - Added `Extended Player Inventory` API

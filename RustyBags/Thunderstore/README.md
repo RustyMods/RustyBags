@@ -7,7 +7,7 @@ Tools like the Cultivator, Hoe, Lantern, Pickaxe, Melee Weapons, Atgeir, Fishing
 
 ## ✨ Features
 
-- 🧳 4 unique bags and 3 functional quivers
+- 🧳 5 unique bags and 3 functional quivers - and 1 lantern
 - 🧵 Visual updates based on bag contents
 - ⚒️ Craft directly from your bag
 - 📦 Items picked up will stack automatically into a matching bag (toggleable)

@@ -600,6 +600,16 @@ public class BagEquipment : MonoBehaviour
             return false;
         }
     }
+    
+    [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.UnequipAllItems))]
+    private static class Humanoid_UnequipAllItems_Patch
+    {
+        private static void Prefix(Humanoid __instance)
+        {
+            if (!__instance.TryGetComponent(out BagEquipment component)) return;
+            component.SetBag(null);
+        }
+    }
 }
 
 public static class BagVars
