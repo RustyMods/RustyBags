@@ -66,14 +66,12 @@ public class BagEquipment : MonoBehaviour
     private bool SetBag(Bag? bag)
     {
         if (m_currentBagItem == bag) return false;
-        m_currentBagItem?.SetEquipped(null);
         m_currentBagItem?.OnUnequip();
         StatusEffect? oldSE = m_currentBagItem?.m_shared.m_equipStatusEffect;
         StatusEffect? newSE = bag?.m_shared.m_equipStatusEffect;
         m_currentBagItem = bag;
         
-        m_currentBagItem?.SetEquipped(this);
-        m_currentBagItem?.OnEquip();
+        m_currentBagItem?.OnEquip(this);
         
         SetBagItem(m_currentBagItem?.m_dropPrefab.name ?? "");
 
@@ -604,6 +602,22 @@ public class BagEquipment : MonoBehaviour
         {
             if (!__instance.TryGetComponent(out BagEquipment component)) return;
             component.SetBag(null);
+        }
+    }
+
+    [HarmonyPatch(typeof(Player), nameof(Player.EquipInventoryItems))]
+    private static class Player_EquipInventoryItems_Patch
+    {
+        [UsedImplicitly]
+        private static void Postfix(Player __instance)
+        {
+            foreach (var item in __instance.m_inventory.GetAllItems())
+            {
+                if (item is not Bag bag) continue;
+                // make sure even unequipped bags are loaded to account for total player inventory weight
+                bag.Load();
+            }
+            __instance.m_inventory.UpdateTotalWeight();
         }
     }
 }

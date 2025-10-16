@@ -7,6 +7,7 @@ namespace RustyBags;
 
 public static class Lanterns
 {
+    private static bool loaded;
     [HarmonyPriority(Priority.First)]
     [HarmonyPatch(typeof(FejdStartup), nameof(FejdStartup.Awake))]
     private static class FejdStartup_Awake_Patch
@@ -17,6 +18,7 @@ public static class Lanterns
 
     private static void Setup(FejdStartup __instance)
     {
+        if (loaded) return;
         AssetBundle bundle = PrefabManager.RegisterAssetBundle("bags_bundle");
         GameObject? source = bundle.LoadAsset<GameObject>("SkullLantern_RS");
         ZNetScene? scene = __instance.m_objectDBPrefab.GetComponent<ZNetScene>();
@@ -70,6 +72,7 @@ public static class Lanterns
         GhostLantern.RequiredItems.Add("Resin", 10);
         GhostLantern.Configurable = Configurability.Disabled;
         Bag.RegisterLantern($"${GhostLantern.Name.Key}");
+        loaded = true;
     }
 
     private static Item CreateCharm(ZNetScene scene, GameObject source, string trophy, string childName, string newName, Vector3? offset = null)

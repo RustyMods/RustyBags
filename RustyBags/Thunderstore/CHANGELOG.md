@@ -1,3 +1,8 @@
+# 1.0.6
+- Fixed logout / login registering charms again
+- Updating bag weight on unequip to make sure effects are only applied while bag is equipped
+- Fixed bag weight on first player load, so even unequipped bags have corrected weight
+
 # 1.0.5 
 - Added on-hover behavior to make sure bag container UI opens
 - for compatibility with jeweler bag and `Quick Stack Store Sort Trash Restock`

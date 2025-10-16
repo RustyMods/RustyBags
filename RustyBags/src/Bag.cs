@@ -196,14 +196,20 @@ public class Bag : ItemDrop.ItemData
         isOpen = false;
     }
     
-    public void OnEquip()
+    public void OnEquip(BagEquipment equipment)
     {
         BagGui.m_currentBag = this;
+        m_bagEquipment = equipment;
+        m_equipped = true;
         Load();
     }
 
     public void OnUnequip()
     {
+        m_equipped = false;
+        UpdateWeight();
+        m_bagEquipment?.m_player.GetInventory().UpdateTotalWeight();
+        m_bagEquipment = null;
         if (BagGui.m_currentBag != this) return;
         BagGui.m_currentBag = null;
     }
@@ -318,7 +324,12 @@ public class Bag : ItemDrop.ItemData
     public float GetInventoryWeight()
     {
         float total = inventory.GetTotalWeight();
-        if (m_shared.m_equipStatusEffect is SE_Bag se) se.ModifyInventoryWeight(inventory, ref total);
+        if (m_shared.m_equipStatusEffect is SE_Bag se && m_equipped)
+        {
+            SE_Bag effect = (se.Clone() as SE_Bag)!;
+            effect.SetLevel(m_quality, 0f);
+            effect.ModifyInventoryWeight(inventory, ref total);
+        }
         return total;
     }
 
@@ -332,12 +343,6 @@ public class Bag : ItemDrop.ItemData
         }
         inventory.Changed();
         fromInventory.UpdateTotalWeight();
-    }
-    
-    public void SetEquipped(BagEquipment? equipment)
-    {
-        m_equipped = equipment != null;
-        m_bagEquipment = equipment;
     }
 
     [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.Pickup))]
