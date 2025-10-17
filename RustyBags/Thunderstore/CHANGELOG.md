@@ -1,3 +1,6 @@
+# 1.0.7
+- Fixed bag not updating after player dies and retrieves bag
+
 # 1.0.6
 - Fixed logout / login registering charms again
 - Updating bag weight on unequip to make sure effects are only applied while bag is equipped

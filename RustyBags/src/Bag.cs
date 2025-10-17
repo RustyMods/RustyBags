@@ -293,7 +293,6 @@ public class Bag : ItemDrop.ItemData
 
     public bool Load()
     {
-        if (isLoaded) return false;
         SetupInventory();
         if (m_customData.TryGetValue(BAG_DATA_KEY, out string data))
         {
