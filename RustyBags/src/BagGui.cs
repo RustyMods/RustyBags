@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 using JetBrains.Annotations;
+using RustyBags.Managers;
 using TMPro;
 using UnityEngine;
 
@@ -38,8 +39,7 @@ public static class BagGui
             if (__instance.m_currentContainer != null)
             {
                 if (grid.GetInventory() == localPlayer.GetInventory()) return true;
-                if (item is Bag && localPlayer.GetInventory().HasBag()) return false;
-                return true;
+                return Configs.MultipleBags || item is not Bag || !localPlayer.GetInventory().HasBag();
             }
             
             if (m_currentBag is { isOpen: true })

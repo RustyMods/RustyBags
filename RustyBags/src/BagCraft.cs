@@ -1,9 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 using JetBrains.Annotations;
-using UnityEngine;
 
 namespace RustyBags;
 
@@ -159,45 +159,52 @@ public static class BagCraft
     }
 
     [HarmonyPatch(typeof(Player), nameof(Player.ConsumeResources))]
-    private static class PlayerConsumeResourcesPatch
+    private static class Player_ConsumeResources_Transpiler
     {
         [UsedImplicitly]
-        private static bool Prefix(Player __instance, Piece.Requirement[] requirements, int qualityLevel,
-            int itemQuality, int multiplier)
+        private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            if (__instance.GetEquippedBag() is not { } bag) return true;
+            MethodInfo? target = AccessTools.Method(typeof(Inventory), nameof(Inventory.RemoveItem), new Type[] 
+                { typeof(string), typeof(int), typeof(int), typeof(bool) });
+            MethodInfo? method = AccessTools.Method(typeof(Player_ConsumeResources_Transpiler), nameof(RemoveItem));
 
-            foreach (Piece.Requirement requirement in requirements)
+            return new CodeMatcher(instructions)
+                .Start()
+                .MatchStartForward(new CodeMatch(OpCodes.Callvirt, target))
+                .Insert(new CodeInstruction(OpCodes.Ldarg_0))
+                .Advance(1)
+                .Set(OpCodes.Call, method)
+                .InstructionEnumeration();
+        }
+
+        public static void RemoveItem(Inventory inventory, string sharedName, int amount, int quality, bool worldLevelBased, Player player)
+        {
+            if (player.GetEquippedBag() is not { } bag)
             {
-                ItemDrop? item = requirement.m_resItem;
-                if (item)
+                inventory.RemoveItem(sharedName, amount, quality);
+            }
+            else
+            {
+                int bagCount = bag.inventory.CountItems(sharedName, quality);
+                if (bagCount > 0)
                 {
-                    int amount = requirement.GetAmount(qualityLevel) * multiplier;
-                    if (amount <= 0) continue;
-                    
-                    int bagCount = bag.inventory.CountItems(item.m_itemData.m_shared.m_name, itemQuality);
-                    if (bagCount > 0)
+                    if (amount > bagCount)
                     {
-                        if (amount > bagCount)
-                        {
-                            bag.inventory.RemoveItem(item.m_itemData.m_shared.m_name, bagCount, itemQuality);
-                            amount -= bagCount;
-                        }
-                        else
-                        {
-                            bag.inventory.RemoveItem(item.m_itemData.m_shared.m_name, amount, itemQuality);
-                            amount = 0;
-                        }
+                        bag.inventory.RemoveItem(sharedName, bagCount, quality);
+                        amount -= bagCount;
                     }
-
-                    if (amount > 0)
+                    else
                     {
-                        __instance.m_inventory.RemoveItem(item.m_itemData.m_shared.m_name, amount, itemQuality);
+                        bag.inventory.RemoveItem(sharedName, amount, quality);
+                        amount = 0;
                     }
                 }
-            }
 
-            return false;
+                if (amount > 0)
+                {
+                    inventory.RemoveItem(sharedName, amount, quality);
+                }
+            }
         }
     }
 
