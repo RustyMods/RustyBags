@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
@@ -29,18 +30,35 @@ public static class BagGui
         [UsedImplicitly]
         private static bool Prefix(InventoryGui __instance, InventoryGrid grid, ItemDrop.ItemData? item, InventoryGrid.Modifier mod)
         {
-            if (item == null || item.m_shared.m_questItem || mod is not InventoryGrid.Modifier.Move || __instance.m_dragGo || __instance.m_currentContainer != null || m_currentBag is not { isOpen: true }) return true;
-            
+            if (item == null || item.m_shared.m_questItem || mod is not InventoryGrid.Modifier.Move || __instance.m_dragGo) return true;
+
             var localPlayer = Player.m_localPlayer;
             if (localPlayer.IsTeleporting()) return false;
             
-            localPlayer.RemoveEquipAction(item);
-            localPlayer.UnequipItem(item);
-            if (grid.GetInventory() == m_currentBag.inventory) localPlayer.GetInventory().MoveItemToThis(grid.GetInventory(), item);
-            else m_currentBag.inventory.MoveItemToThis(localPlayer.GetInventory(), item);
-            __instance.m_moveItemEffects.Create(__instance.transform.position, Quaternion.identity); 
+            if (__instance.m_currentContainer != null)
+            {
+                if (grid.GetInventory() == localPlayer.GetInventory()) return true;
+                if (item is Bag && localPlayer.GetInventory().HasBag()) return false;
+                return true;
+            }
+            
+            if (m_currentBag is { isOpen: true })
+            {
+                localPlayer.RemoveEquipAction(item);
+                localPlayer.UnequipItem(item);
+                if (grid.GetInventory() == m_currentBag.inventory)
+                {
+                    localPlayer.GetInventory().MoveItemToThis(grid.GetInventory(), item);
+                }
+                else
+                {
+                    m_currentBag.inventory.MoveItemToThis(localPlayer.GetInventory(), item);
+                }
+                __instance.m_moveItemEffects.Create(__instance.transform.position, Quaternion.identity); 
+                return false;
+            }
 
-            return false;
+            return true;
         }
     }
     
@@ -245,7 +263,7 @@ public static class BagGui
     
     public static void GetBagWornItems(InventoryGui instance)
     {
-        if (Player.m_localPlayer.GetBag() is not { } bag) return;
+        if (Player.m_localPlayer.GetEquippedBag() is not { } bag) return;
         bag.inventory.GetWornItems(instance.m_tempWornItems);
     }
 }

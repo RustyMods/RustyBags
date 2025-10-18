@@ -16,7 +16,7 @@ namespace RustyBags
     public class RustyBagsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "RustyBags";
-        internal const string ModVersion = "1.0.7";
+        internal const string ModVersion = "1.0.8";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         public static readonly string ConfigFileName = ModGUID + ".cfg";
@@ -236,7 +236,14 @@ namespace RustyBags
 
             if (AzuExtendedPlayerInventory.API.IsLoaded())
             {
-                AzuExtendedPlayerInventory.API.AddSlot("Bag", player => player.GetBag(), item => item is Bag, 1);
+                string? localized = Localization.instance.Localize(Keys.Bag);
+                AzuExtendedPlayerInventory.API.AddSlot(localized, player => player.GetEquippedBag(),
+                    item =>
+                    {
+                        if (item is not Bag) return false;
+                        if (Configs.MultipleBags) return true;
+                        return !(Player.m_localPlayer?.HasBag() ?? false);
+                    });
             }
             
             Assembly assembly = Assembly.GetExecutingAssembly();

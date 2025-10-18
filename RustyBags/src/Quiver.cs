@@ -42,7 +42,7 @@ public class Quiver : Bag
         [UsedImplicitly]
         private static bool Prefix(Humanoid character, ref bool __result)
         {
-            if (character.GetBag() is not Quiver) return true;
+            if (character.GetEquippedBag() is not Quiver) return true;
             __result = true;
             return false;
         }
@@ -54,7 +54,7 @@ public class Quiver : Bag
         [UsedImplicitly]
         private static void Postfix(Humanoid character, ItemDrop.ItemData weapon, ref ItemDrop.ItemData? __result)
         {
-            if (__result != null || character.GetBag() is not Quiver quiver || string.IsNullOrEmpty(weapon.m_shared.m_ammoType)) return;
+            if (__result != null || character.GetEquippedBag() is not Quiver quiver || string.IsNullOrEmpty(weapon.m_shared.m_ammoType)) return;
             __result = quiver.ammoItem;
         }
     }
@@ -65,7 +65,7 @@ public class Quiver : Bag
         [UsedImplicitly]
         private static bool Prefix(Humanoid character, ItemDrop.ItemData weapon, ref bool __result)
         {
-            if (__result || character.GetBag() is not Quiver quiver || string.IsNullOrEmpty(weapon.m_shared.m_ammoType)) return true;
+            if (__result || character.GetEquippedBag() is not Quiver quiver || string.IsNullOrEmpty(weapon.m_shared.m_ammoType)) return true;
             if (quiver.ammoItem == null) return true;
             __result = quiver.ammoItem.m_shared.m_itemType != ItemType.Consumable || character.CanConsumeItem(quiver.ammoItem);
             return false;
@@ -83,7 +83,7 @@ public class Quiver : Bag
             ammoItem = __instance.m_character.GetAmmoItem();
             if (string.IsNullOrEmpty(__instance.m_weapon.m_shared.m_ammoType)) return true;
             if (ammoItem != null) return true;
-            if (__instance.m_character.GetBag() is not Quiver quiver) return true;
+            if (__instance.m_character.GetEquippedBag() is not Quiver quiver) return true;
             __instance.m_ammoItem = null;
             ammoItem = quiver.ammoItem;
             

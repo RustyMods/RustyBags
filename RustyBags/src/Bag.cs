@@ -19,13 +19,27 @@ public static class BagExtensions
     public static bool IsBag(this ItemDrop.ItemData item, out BagSetup setup) => BagSetup.bags.TryGetValue(item.m_shared.m_name, out setup);
     public static bool IsQuiver(this ItemDrop.ItemData item) => BagSetup.bags.TryGetValue(item.m_shared.m_name, out var setup) && setup.isQuiver;
     public static bool IsBound(this ItemDrop.ItemData item) => item.m_gridPos.y == 0;
-    public static Bag? GetBag(this Humanoid humanoid)
+    public static Bag? GetEquippedBag(this Humanoid humanoid)
     {
         foreach (ItemDrop.ItemData? item in humanoid.GetInventory().GetAllItems())
         {
             if (item is Bag { m_equipped: true } bag) return bag;
         }
         return null;
+    }
+
+    public static Bag? GetAnyBag(this Humanoid humanoid)
+    {
+        foreach (ItemDrop.ItemData? item in humanoid.GetInventory().GetAllItems())
+        {
+            if (item is Bag bag) return bag;
+        }
+        return null;
+    }
+
+    public static bool HasBag(this Humanoid humanoid)
+    {
+        return humanoid.GetAnyBag() != null;
     }
 }
 
@@ -52,7 +66,7 @@ public class BagSetup
 
     public BagSetup(Item item, int width, int height, bool isQuiver = false, bool isOreBag = false, bool replaceShader = true)
     {
-        var sharedName = $"${item.Name.Key}";
+        string sharedName = $"${item.Name.Key}";
         englishName = new Regex(@"[=\n\t\\""\'\[\]]*").Replace(Item.english.Localize(sharedName), "").Trim();
         sizes[1] = new Size(width, height);
         this.isQuiver = isQuiver;
@@ -149,8 +163,7 @@ public class BagSetup
         private static void Prefix(ItemDrop __instance)
         {
             if (!__instance.m_itemData.IsBag(out BagSetup setup)) return;
-            __instance.m_itemData = 
-                setup.isQuiver ? new Quiver(__instance.m_itemData) : new Bag(__instance.m_itemData);
+            __instance.m_itemData = setup.isQuiver ? new Quiver(__instance.m_itemData) : new Bag(__instance.m_itemData);
         }
     }
 }
@@ -180,7 +193,7 @@ public class Bag : ItemDrop.ItemData
     public Bag(ItemDrop.ItemData item)
     {
         m_shared = item.m_shared;
-        m_shared.m_itemType = ItemType.Trinket;
+        m_shared.m_itemType = ItemType.Misc;
         m_customData = item.m_customData;
         baseWeight = m_shared.m_weight;
     }
@@ -216,13 +229,15 @@ public class Bag : ItemDrop.ItemData
 
     private void OnChanged()
     {
-        m_shared.m_teleportable = inventory.IsTeleportable();
+        UpdateTeleportable();
         UpdateWeight();
         ZPackage pkg = new ZPackage();
         inventory.Save(pkg);
         m_customData[BAG_DATA_KEY] = pkg.GetBase64();
         UpdateAttachments();
     }
+    
+    public void UpdateTeleportable() => m_shared.m_teleportable = inventory.IsTeleportable();
 
     protected virtual void UpdateAttachments()
     {
@@ -298,6 +313,7 @@ public class Bag : ItemDrop.ItemData
         {
             ZPackage pkg = new ZPackage(data);
             inventory.Load(pkg);
+            UpdateTeleportable();
             UpdateWeight();
             UpdateAttachments();
             isLoaded = true;
@@ -332,18 +348,6 @@ public class Bag : ItemDrop.ItemData
         return total;
     }
 
-    private void GrabAll(Inventory fromInventory)
-    {
-        List<ItemDrop.ItemData> itemDataList = new List<ItemDrop.ItemData>(fromInventory.GetAllItems());
-        foreach (ItemDrop.ItemData itemData in itemDataList)
-        {
-            if (itemData.IsBound()) continue;
-            if (inventory.ContainsItemByName(itemData.m_shared.m_name) && !Player.m_localPlayer.IsItemEquiped(itemData) && inventory.AddItem(itemData)) fromInventory.RemoveItem(itemData);
-        }
-        inventory.Changed();
-        fromInventory.UpdateTotalWeight();
-    }
-
     [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.Pickup))]
     private static class Humanoid_Pickup_Transpiler
     {
@@ -364,7 +368,7 @@ public class Bag : ItemDrop.ItemData
 
         public static bool AddIntoBag(Inventory inventory, ItemDrop.ItemData item, Humanoid instance)
         {
-            if (Configs.AutoStack && instance.GetBag() is { } bag && bag.inventory.ContainsItemByName(item.m_shared.m_name)) return bag.inventory.AddItem(item);
+            if (Configs.AutoStack && instance.GetEquippedBag() is { } bag && bag.inventory.ContainsItemByName(item.m_shared.m_name)) return bag.inventory.AddItem(item);
             return inventory.AddItem(item);
         }
     }
@@ -378,5 +382,12 @@ public class Bag : ItemDrop.ItemData
             if (__instance is not Bag bag) return;
             bag.UpdateWeight();
         }
+    }
+
+    [HarmonyPatch(typeof(ItemDrop.ItemData), nameof(IsEquipable))]
+    private static class ItemDrop_IsEquipable_Patch
+    {
+        [UsedImplicitly]
+        private static void Postfix(ItemDrop.ItemData __instance, ref bool __result) => __result |= __instance is Bag;
     }
 }

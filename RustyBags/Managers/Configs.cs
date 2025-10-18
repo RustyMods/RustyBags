@@ -13,8 +13,10 @@ public static class Configs
 {
     private static ConfigEntry<Toggle> _serverConfigLocked = null!;
     private static ConfigEntry<Toggle> _autoStack = null!;
+    private static ConfigEntry<Toggle> _multipleBags = null!;
 
     public static bool AutoStack => _autoStack.Value is Toggle.On;
+    public static bool MultipleBags => _multipleBags.Value is Toggle.On;
 
     public static void Setup()
     {
@@ -24,7 +26,7 @@ public static class Configs
 
         _autoStack = config("1 - General", "Stack Into Bag", Toggle.On,
             "If on, equipped bag will try to stack items on pickup", false);
-        
+        _multipleBags = config("1 - General", "Multiple Bags", Toggle.Off, "If on, player can carry multiple bags");
         foreach(var bagSetup in BagSetup.bags.Values) bagSetup.SetupConfigs();
         
         SetupWatcher();

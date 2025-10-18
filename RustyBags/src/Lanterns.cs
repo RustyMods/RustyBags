@@ -15,7 +15,7 @@ public static class Lanterns
         [UsedImplicitly]
         private static void Postfix(FejdStartup __instance) => Setup(__instance);
     }
-
+    
     private static void Setup(FejdStartup __instance)
     {
         if (loaded) return;

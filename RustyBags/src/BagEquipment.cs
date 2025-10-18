@@ -575,6 +575,7 @@ public class BagEquipment : MonoBehaviour
                 __result = false;
                 return false;
             }
+            
             __result = component.SetBag(bag);
             if (triggerEquipEffects) __instance.TriggerEquipEffect(item);
             return false;

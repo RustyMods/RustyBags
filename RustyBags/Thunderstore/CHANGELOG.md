@@ -1,3 +1,8 @@
+# 1.0.8
+- Fixed bag updating teleportable of first load
+- Added config to limit bag to one in player inventory
+- localized EPI Bag slot: `$label_bag`
+
 # 1.0.7
 - Fixed bag not updating after player dies and retrieves bag
 

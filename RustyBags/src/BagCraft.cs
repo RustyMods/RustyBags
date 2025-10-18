@@ -35,7 +35,7 @@ public static class BagCraft
 
         public static int AddBagCount(int inventoryCount, Player player, Piece.Requirement resource, int quality)
         {
-            if (player.GetBag() is not { } bag) return inventoryCount;
+            if (player.GetEquippedBag() is not { } bag) return inventoryCount;
             int bagCount = bag.inventory.CountItems(resource.m_resItem.m_itemData.m_shared.m_name, quality);
             return inventoryCount + bagCount;
         }
@@ -50,7 +50,7 @@ public static class BagCraft
         {
             amount = 0;
             extraAmount = 0;
-            if (__instance.GetBag() is not { } bag) return true;
+            if (__instance.GetEquippedBag() is not { } bag) return true;
             foreach (var resource in recipe.m_resources)
             {
                 var item = resource.m_resItem;
@@ -91,7 +91,7 @@ public static class BagCraft
         [UsedImplicitly]
         private static bool Prefix(Player __instance, Piece piece, Player.RequirementMode mode, ref bool __result)
         {
-            if (__instance.GetBag() is not { } bag || mode == Player.RequirementMode.IsKnown) return true;
+            if (__instance.GetEquippedBag() is not { } bag || mode == Player.RequirementMode.IsKnown) return true;
             
             if (piece.m_craftingStation)
             {
@@ -165,7 +165,7 @@ public static class BagCraft
         private static bool Prefix(Player __instance, Piece.Requirement[] requirements, int qualityLevel,
             int itemQuality, int multiplier)
         {
-            if (__instance.GetBag() is not { } bag) return true;
+            if (__instance.GetEquippedBag() is not { } bag) return true;
 
             foreach (Piece.Requirement requirement in requirements)
             {
@@ -221,7 +221,7 @@ public static class BagCraft
         private static int AddBagCount(Inventory inventory, string sharedName, int quality, bool worldLevel, Player player)
         {
             int num1 = inventory.CountItems(sharedName);
-            if (player.GetBag() is not { } bag) return num1;
+            if (player.GetEquippedBag() is not { } bag) return num1;
             num1 += bag.inventory.CountItems(sharedName);
             return num1;
         }

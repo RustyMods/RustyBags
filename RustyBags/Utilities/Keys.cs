@@ -34,6 +34,7 @@ public static class Keys
     public static readonly string Only = new Key("$msg_only", "Only").key;
     public static readonly string Allowed = new Key("$msg_allowed", "allowed").key;
     public static readonly string OreWeight = new Key("$se_oreweight", "Ore Weight").key;
+    public static readonly string Bag = new Keys.Key("$label_bag", "Bag").key;
     
     public const string Blunt = "$inventory_blunt";
     public const string Slash = "$inventory_slash";
