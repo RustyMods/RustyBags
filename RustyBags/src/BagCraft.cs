@@ -4,11 +4,54 @@ using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 using JetBrains.Annotations;
+using RustyBags.Managers;
 
 namespace RustyBags;
 
 public static class BagCraft
 {
+    public static int CountItems(Inventory inventory, string sharedName, int quality, bool matchWorldLevel, Player player)
+    {
+        if (player.GetEquippedBag() is not {} bag || !Configs.CraftFromBag) return inventory.CountItems(sharedName, quality);
+        return inventory.CountItems(sharedName, quality) + bag.inventory.CountItems(sharedName,quality);
+    }
+    
+    public static bool HaveItem(Inventory inventory, string sharedName, bool worldLevelBased, Player player)
+    {
+        if (player.GetEquippedBag() is not {} bag  || !Configs.CraftFromBag) return inventory.HaveItem(sharedName);
+        return inventory.HaveItem(sharedName) || bag.inventory.HaveItem(sharedName);
+    }
+    
+    public static void RemoveItem(Inventory inventory, string sharedName, int amount, int quality, bool worldLevelBased, Player player)
+    {
+        if (player.GetEquippedBag() is not { } bag  || !Configs.CraftFromBag)
+        {
+            inventory.RemoveItem(sharedName, amount, quality);
+        }
+        else
+        {
+            int bagCount = bag.inventory.CountItems(sharedName, quality);
+            if (bagCount > 0)
+            {
+                if (amount > bagCount)
+                {
+                    bag.inventory.RemoveItem(sharedName, bagCount, quality);
+                    amount -= bagCount;
+                }
+                else
+                {
+                    bag.inventory.RemoveItem(sharedName, amount, quality);
+                    amount = 0;
+                }
+            }
+
+            if (amount > 0)
+            {
+                inventory.RemoveItem(sharedName, amount, quality);
+            }
+        }
+    }
+    
     [HarmonyPatch(typeof(Player), nameof(Player.HaveRequirementItems))]
     private static class Player_HaveRequirementItems_Transpiler
     {
@@ -16,31 +59,17 @@ public static class BagCraft
         private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
             MethodInfo? target = AccessTools.Method(typeof(Inventory), nameof(Inventory.CountItems));
-            MethodInfo? method = AccessTools.Method(typeof(Player_HaveRequirementItems_Transpiler), nameof(AddBagCount));
-            CodeInstruction[] newInstructions = new[]
-            {
-                new CodeInstruction(OpCodes.Ldarg_0),
-                new CodeInstruction(OpCodes.Ldloc_2),
-                new CodeInstruction(OpCodes.Ldloc_S, 4),
-                new CodeInstruction(OpCodes.Call, method)
-            };
-
+            MethodInfo? replacement = AccessTools.Method(typeof(BagCraft), nameof(CountItems));
             return new CodeMatcher(instructions)
                 .Start()
                 .MatchStartForward(new CodeMatch(OpCodes.Callvirt, target))
+                .Insert(new CodeInstruction(OpCodes.Ldarg_0))
                 .Advance(1)
-                .Insert(newInstructions)
+                .Set(OpCodes.Call, replacement)
                 .InstructionEnumeration();
         }
-
-        public static int AddBagCount(int inventoryCount, Player player, Piece.Requirement resource, int quality)
-        {
-            if (player.GetEquippedBag() is not { } bag) return inventoryCount;
-            int bagCount = bag.inventory.CountItems(resource.m_resItem.m_itemData.m_shared.m_name, quality);
-            return inventoryCount + bagCount;
-        }
     }
-
+    
     [HarmonyPatch(typeof(Player), nameof(Player.GetFirstRequiredItem))]
     private static class PlayerGetFirstRequiredItemPatch
     {
@@ -50,7 +79,7 @@ public static class BagCraft
         {
             amount = 0;
             extraAmount = 0;
-            if (__instance.GetEquippedBag() is not { } bag) return true;
+            if (__instance.GetEquippedBag() is not { } bag  || !Configs.CraftFromBag) return true;
             foreach (var resource in recipe.m_resources)
             {
                 var item = resource.m_resItem;
@@ -86,75 +115,29 @@ public static class BagCraft
     }
 
     [HarmonyPatch(typeof(Player), nameof(Player.HaveRequirements), typeof(Piece), typeof(Player.RequirementMode))]
-    private static class PlayerHaveRequirementsPatch
+    private static class Player_HaveRequirements_Transpiler
     {
         [UsedImplicitly]
-        private static bool Prefix(Player __instance, Piece piece, Player.RequirementMode mode, ref bool __result)
+        private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            if (__instance.GetEquippedBag() is not { } bag || mode == Player.RequirementMode.IsKnown) return true;
+            MethodInfo? target1 = AccessTools.Method(typeof(Inventory), nameof(Inventory.CountItems));
+            MethodInfo? target2 = AccessTools.Method(typeof(Inventory), nameof(Inventory.HaveItem), new Type[]{typeof(string), typeof(bool)});
             
-            if (piece.m_craftingStation)
-            {
-                string? stationName = piece.m_craftingStation.m_name;
-                if (mode == Player.RequirementMode.CanAlmostBuild)
-                {
-                    if (!__instance.m_knownStations.ContainsKey(stationName))
-                    {
-                        __result = false;
-                        return false;
-                    }
-                }
-                else if (!CraftingStation.HaveBuildStationInRange(stationName, __instance.transform.position) &&
-                         !ZoneSystem.instance.GetGlobalKey(GlobalKeys.NoWorkbench))
-                {
-                    __result = false;
-                    return false;
-                }
-            }
-
-            if (piece.m_dlc.Length > 0 && !DLCMan.instance.IsDLCInstalled(piece.m_dlc))
-            {
-                __result = false;
-                return false;
-            }
-
-            if (ZoneSystem.instance.GetGlobalKey(piece.FreeBuildKey()))
-            {
-                __result = true;
-                return false;
-            }
-
-            foreach (Piece.Requirement? resource in piece.m_resources)
-            {
-                ItemDrop? item = resource.m_resItem;
-                string? sharedName = item.m_itemData.m_shared.m_name;
-                if (item && resource.m_amount > 0)
-                {
-                    switch (mode)
-                    {
-                        case Player.RequirementMode.CanBuild:
-                            int count = bag.inventory.CountItems(sharedName) + __instance.m_inventory.CountItems(sharedName);
-                            if (count < resource.m_amount)
-                            {
-                                __result = false;
-                                return false;
-                            }
-                            continue;
-                        case Player.RequirementMode.CanAlmostBuild:
-                            bool haveItem = bag.inventory.HaveItem(sharedName) || __instance.m_inventory.HaveItem(sharedName);
-                            if (!haveItem)
-                            {
-                                __result = false;
-                                return false;
-                            }
-                            continue;
-                        default:
-                            continue;
-                    }
-                }
-            }
-            __result = true;
-            return false;
+            MethodInfo? getCount = AccessTools.Method(typeof(BagCraft), nameof(CountItems));
+            MethodInfo? haveItem = AccessTools.Method(typeof(BagCraft), nameof(HaveItem));
+            
+            return new CodeMatcher(instructions)
+                .Start()
+                .MatchStartForward(new CodeMatch(OpCodes.Callvirt, target1))
+                .Insert(new CodeInstruction(OpCodes.Ldarg_0))
+                .Advance(1)
+                .Set(OpCodes.Call, getCount)
+                .Start()
+                .MatchStartForward(new CodeMatch(OpCodes.Callvirt, target2))
+                .Insert(new CodeInstruction(OpCodes.Ldarg_0))
+                .Advance(1)
+                .Set(OpCodes.Call, haveItem)
+                .InstructionEnumeration();
         }
     }
 
@@ -164,10 +147,8 @@ public static class BagCraft
         [UsedImplicitly]
         private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            MethodInfo? target = AccessTools.Method(typeof(Inventory), nameof(Inventory.RemoveItem), new Type[] 
-                { typeof(string), typeof(int), typeof(int), typeof(bool) });
-            MethodInfo? method = AccessTools.Method(typeof(Player_ConsumeResources_Transpiler), nameof(RemoveItem));
-
+            MethodInfo? target = AccessTools.Method(typeof(Inventory), nameof(Inventory.RemoveItem), new Type[] { typeof(string), typeof(int), typeof(int), typeof(bool) });
+            MethodInfo? method = AccessTools.Method(typeof(BagCraft), nameof(RemoveItem));
             return new CodeMatcher(instructions)
                 .Start()
                 .MatchStartForward(new CodeMatch(OpCodes.Callvirt, target))
@@ -176,61 +157,23 @@ public static class BagCraft
                 .Set(OpCodes.Call, method)
                 .InstructionEnumeration();
         }
-
-        public static void RemoveItem(Inventory inventory, string sharedName, int amount, int quality, bool worldLevelBased, Player player)
-        {
-            if (player.GetEquippedBag() is not { } bag)
-            {
-                inventory.RemoveItem(sharedName, amount, quality);
-            }
-            else
-            {
-                int bagCount = bag.inventory.CountItems(sharedName, quality);
-                if (bagCount > 0)
-                {
-                    if (amount > bagCount)
-                    {
-                        bag.inventory.RemoveItem(sharedName, bagCount, quality);
-                        amount -= bagCount;
-                    }
-                    else
-                    {
-                        bag.inventory.RemoveItem(sharedName, amount, quality);
-                        amount = 0;
-                    }
-                }
-
-                if (amount > 0)
-                {
-                    inventory.RemoveItem(sharedName, amount, quality);
-                }
-            }
-        }
     }
 
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.SetupRequirement))]
-    private static class InventoryGuiSetupRequirementTranspiler
+    private static class InventoryGui_SetupRequirement_Transpiler
     {
         [UsedImplicitly]
         private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
             MethodInfo? target = AccessTools.Method(typeof(Inventory), nameof(Inventory.CountItems));
-            MethodInfo? call = AccessTools.Method(typeof(InventoryGuiSetupRequirementTranspiler), nameof(AddBagCount));
+            MethodInfo? replacement = AccessTools.Method(typeof(BagCraft), nameof(CountItems));
             return new CodeMatcher(instructions)
                 .Start()
                 .MatchStartForward(new CodeMatch(OpCodes.Callvirt, target))
                 .Insert(new CodeInstruction(OpCodes.Ldarg_2))
                 .Advance(1)
-                .Set(OpCodes.Call, call)
+                .Set(OpCodes.Call, replacement)
                 .InstructionEnumeration();
-        }
-
-        private static int AddBagCount(Inventory inventory, string sharedName, int quality, bool worldLevel, Player player)
-        {
-            int num1 = inventory.CountItems(sharedName);
-            if (player.GetEquippedBag() is not { } bag) return num1;
-            num1 += bag.inventory.CountItems(sharedName);
-            return num1;
         }
     }
 }

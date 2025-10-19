@@ -14,21 +14,21 @@ public static class Configs
     private static ConfigEntry<Toggle> _serverConfigLocked = null!;
     private static ConfigEntry<Toggle> _autoStack = null!;
     private static ConfigEntry<Toggle> _multipleBags = null!;
+    private static ConfigEntry<Toggle> _craftFromBag = null!;
 
     public static bool AutoStack => _autoStack.Value is Toggle.On;
     public static bool MultipleBags => _multipleBags.Value is Toggle.On;
+    
+    public static bool CraftFromBag => _craftFromBag.Value is Toggle.On;
 
     public static void Setup()
     {
-        _serverConfigLocked = config("1 - General", "Lock Configuration", Toggle.On,
-            "If on, the configuration is locked and can be changed by server admins only.");
+        _serverConfigLocked = config("1 - General", "Lock Configuration", Toggle.On, "If on, the configuration is locked and can be changed by server admins only.");
         _ = RustyBagsPlugin.ConfigSync.AddLockingConfigEntry(_serverConfigLocked);
-
-        _autoStack = config("1 - General", "Stack Into Bag", Toggle.On,
-            "If on, equipped bag will try to stack items on pickup", false);
+        _autoStack = config("1 - General", "Stack Into Bag", Toggle.On, "If on, equipped bag will try to stack items on pickup", false);
         _multipleBags = config("1 - General", "Multiple Bags", Toggle.Off, "If on, player can carry multiple bags");
-        foreach(var bagSetup in BagSetup.bags.Values) bagSetup.SetupConfigs();
-        
+        _craftFromBag = config("1 - General", "Craft From Bag", Toggle.On, "If on, player can build and craft with equipped bag contents");
+        foreach(BagSetup? bagSetup in BagSetup.bags.Values) bagSetup.SetupConfigs();
         SetupWatcher();
     }
     

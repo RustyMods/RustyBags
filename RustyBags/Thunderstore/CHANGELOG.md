@@ -1,3 +1,6 @@
+# 1.0.9
+- Added config to disable craft from bag
+
 # 1.0.8
 - Fixed bag updating teleportable of first load
 - Added config to limit bag to one in player inventory

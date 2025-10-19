@@ -237,7 +237,7 @@ public class Bag : ItemDrop.ItemData
         UpdateAttachments();
     }
     
-    public void UpdateTeleportable() => m_shared.m_teleportable = inventory.IsTeleportable();
+    public void UpdateTeleportable() => m_shared.m_teleportable = ZoneSystem.instance && inventory.IsTeleportable();
 
     protected virtual void UpdateAttachments()
     {
