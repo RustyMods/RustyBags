@@ -16,7 +16,7 @@ namespace RustyBags
     public class RustyBagsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "RustyBags";
-        internal const string ModVersion = "1.0.9";
+        internal const string ModVersion = "1.1.0";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         public static readonly string ConfigFileName = ModGUID + ".cfg";

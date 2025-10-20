@@ -22,7 +22,7 @@ public static class InventoryGrid_DropItem_Patch
     {
         if (fromInventory == __instance.m_inventory) return true;
         
-        if (!Configs.MultipleBags && __instance.m_inventory.IsPlayerInventory() && __instance.m_inventory.HasBag())
+        if (!Configs.MultipleBags && item is Bag && __instance.m_inventory.IsPlayerInventory() && __instance.m_inventory.HasBag())
         {
             __result = false;
             return false;

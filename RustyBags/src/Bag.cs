@@ -229,15 +229,20 @@ public class Bag : ItemDrop.ItemData
 
     private void OnChanged()
     {
+        SaveInventory();
         UpdateTeleportable();
         UpdateWeight();
+        UpdateAttachments();
+    }
+
+    private void SaveInventory()
+    {
         ZPackage pkg = new ZPackage();
         inventory.Save(pkg);
         m_customData[BAG_DATA_KEY] = pkg.GetBase64();
-        UpdateAttachments();
     }
-    
-    public void UpdateTeleportable() => m_shared.m_teleportable = ZoneSystem.instance && inventory.IsTeleportable();
+
+    private void UpdateTeleportable() => m_shared.m_teleportable = ZoneSystem.instance && inventory.IsTeleportable();
 
     protected virtual void UpdateAttachments()
     {

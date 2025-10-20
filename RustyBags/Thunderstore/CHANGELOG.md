@@ -1,3 +1,6 @@
+# 1.1.0
+- Fixed inventory drag not allowing to drag into player inventory while single bag config is on
+
 # 1.0.9
 - Added config to disable craft from bag
 
