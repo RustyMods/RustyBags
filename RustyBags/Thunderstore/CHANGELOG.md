@@ -1,3 +1,10 @@
+# 1.1.1
+- Fixed auto-stack not updating player inventory weight on pickup
+- added scyth attach
+- added automatic un-patch craft-from-bag if conflicts found
+- fixed repairing items in bag not being saved
+- lantern and charms remove movement speed penalty (toggleable)
+
 # 1.1.0
 - Fixed inventory drag not allowing to drag into player inventory while single bag config is on
 

@@ -15,11 +15,13 @@ public static class Configs
     private static ConfigEntry<Toggle> _autoStack = null!;
     private static ConfigEntry<Toggle> _multipleBags = null!;
     private static ConfigEntry<Toggle> _craftFromBag = null!;
+    private static ConfigEntry<Toggle> _charmsAffectBag = null!;
 
     public static bool AutoStack => _autoStack.Value is Toggle.On;
     public static bool MultipleBags => _multipleBags.Value is Toggle.On;
-    
     public static bool CraftFromBag => _craftFromBag.Value is Toggle.On;
+    
+    public static bool CharmsAffectBag => _charmsAffectBag.Value is Toggle.On;
 
     public static void Setup()
     {
@@ -28,6 +30,8 @@ public static class Configs
         _autoStack = config("1 - General", "Stack Into Bag", Toggle.On, "If on, equipped bag will try to stack items on pickup", false);
         _multipleBags = config("1 - General", "Multiple Bags", Toggle.Off, "If on, player can carry multiple bags");
         _craftFromBag = config("1 - General", "Craft From Bag", Toggle.On, "If on, player can build and craft with equipped bag contents");
+        _charmsAffectBag = config("1 - General", "Charms Remove Movement Speed Debuff", Toggle.On, "If on, if lantern or charm is equipped to bag, movement speed debuff is removed");
+        
         foreach(BagSetup? bagSetup in BagSetup.bags.Values) bagSetup.SetupConfigs();
         SetupWatcher();
     }

@@ -1,4 +1,5 @@
-﻿using HarmonyLib;
+﻿using System.Collections.Generic;
+using HarmonyLib;
 using JetBrains.Annotations;
 
 namespace RustyBags;
@@ -14,15 +15,17 @@ public class Quiver : Bag
     protected override void SetupInventory()
     {
         BagSetup setup = BagSetup.bags[m_shared.m_name];
-        var size = setup.sizes.TryGetValue(m_quality, out var s) ? s : new BagSetup.Size(1, 1); 
+        BagSetup.Size? size = setup.sizes.TryGetValue(m_quality, out var s) ? s : new BagSetup.Size(1, 1); 
         inventory = new QuiverInventory("Quiver", this, Player.m_localPlayer?.GetInventory().m_bkg, size.width, size.height);
     }
 
     protected override void UpdateAttachments()
     {
         ammoItem = null;
-        foreach (ItemDrop.ItemData? item in inventory.GetAllItemsInGridOrder())
+        List<ItemDrop.ItemData>? list = inventory.GetAllItemsInGridOrder();
+        for (var index = 0; index < list.Count; ++index)
         {
+            ItemDrop.ItemData? item = list[index];
             if (ammoItem == null)
             {
                 ammoItem = item;
@@ -33,6 +36,7 @@ public class Quiver : Bag
                 item.m_equipped = false;
             }
         }
+
         m_bagEquipment?.SetArrowItem(ammoItem?.m_dropPrefab.name ?? "", ammoItem?.m_stack ?? 0);
     }
 
@@ -71,9 +75,7 @@ public class Quiver : Bag
             return false;
         }
     }
-
-    // TODO: learn how to transpile this
-    // to get arrow from quiver
+    
     [HarmonyPatch(typeof(Attack), nameof(Attack.UseAmmo))]
     private static class Attack_UseAmmo_Patch
     {

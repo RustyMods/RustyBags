@@ -10,6 +10,7 @@ using ItemManager;
 using JetBrains.Annotations;
 using Managers;
 using RustyBags.Managers;
+using RustyBags.Utilities;
 using UnityEngine;
 
 namespace RustyBags;
@@ -94,7 +95,7 @@ public class BagSetup
 
     public void SetupConfigs()
     {
-        foreach (var size in sizes)
+        foreach (KeyValuePair<int, Size> size in sizes)
         {
             ConfigEntry<string> config = Configs.config(englishName, $"Inventory Size Qlty.{size.Key}",
                 string.Join("x", size.Value.width, size.Value.height), new ConfigDescription(
@@ -190,6 +191,7 @@ public class Bag : ItemDrop.ItemData
     public ItemDrop.ItemData? hoe;
     public ItemDrop.ItemData? atgeir;
     public ItemDrop.ItemData? ore;
+    public ItemDrop.ItemData? scythe;
     public Bag(ItemDrop.ItemData item)
     {
         m_shared = item.m_shared;
@@ -221,7 +223,6 @@ public class Bag : ItemDrop.ItemData
     {
         m_equipped = false;
         UpdateWeight();
-        m_bagEquipment?.m_player.GetInventory().UpdateTotalWeight();
         m_bagEquipment = null;
         if (BagGui.m_currentBag != this) return;
         BagGui.m_currentBag = null;
@@ -255,13 +256,21 @@ public class Bag : ItemDrop.ItemData
         hoe = null;
         atgeir = null;
         ore = null;
-        
-        foreach (ItemDrop.ItemData? item in inventory.GetAllItemsInGridOrder())
+        scythe = null;
+
+        List<ItemDrop.ItemData>? list = inventory.GetAllItemsInGridOrder();
+        for (var index = 0; index < list.Count; ++index)
         {
+            ItemDrop.ItemData? item = list[index];
+            if (lantern != null && fishingRod != null && cultivator != null && hoe != null && hammer != null &&
+                pickaxe != null && melee != null && atgeir != null && ore != null && scythe != null) break;
+
             if (SE_OreBag.ores.Contains(item.m_shared.m_name) && ore == null)
             {
                 ore = item;
+                continue;
             }
+
             if (!item.IsEquipable()) continue;
             if (lanternNames.Contains(item.m_shared.m_name) && lantern == null)
             {
@@ -283,6 +292,10 @@ public class Bag : ItemDrop.ItemData
             {
                 hammer = item;
             }
+            else if (item.m_shared.m_name == "$item_scythe" && scythe == null)
+            {
+                scythe = item;
+            }
             else if (item.m_shared.m_skillType is Skills.SkillType.Pickaxes && pickaxe == null)
             {
                 pickaxe = item;
@@ -295,11 +308,8 @@ public class Bag : ItemDrop.ItemData
             {
                 atgeir = item;
             }
-
-            if (lantern != null && fishingRod != null && cultivator != null && hoe != null && hammer != null &&
-                pickaxe != null && melee != null && atgeir != null && ore != null) break;
         }
-        
+
         m_bagEquipment?.SetLanternItem(lantern?.m_dropPrefab.name ?? "");
         m_bagEquipment?.SetPickaxeItem(pickaxe?.m_dropPrefab.name ?? "");
         m_bagEquipment?.SetFishingRodItem(fishingRod?.m_dropPrefab.name ?? "");
@@ -309,10 +319,13 @@ public class Bag : ItemDrop.ItemData
         m_bagEquipment?.SetMeleeItem(melee?.m_dropPrefab.name ?? "");
         m_bagEquipment?.SetAtgeirItem(atgeir?.m_dropPrefab.name ?? "");
         m_bagEquipment?.SetOreItem(ore?.m_dropPrefab.name ?? "", ore?.m_stack ?? 0);
+        m_bagEquipment?.SetScytheItem(scythe?.m_dropPrefab.name ?? "");
+        m_bagEquipment?.UpdateEquipStatusEffect();
     }
 
-    public bool Load()
+    public void Load()
     {
+        if (isLoaded) return;
         SetupInventory();
         if (m_customData.TryGetValue(BAG_DATA_KEY, out string data))
         {
@@ -321,10 +334,9 @@ public class Bag : ItemDrop.ItemData
             UpdateTeleportable();
             UpdateWeight();
             UpdateAttachments();
-            isLoaded = true;
         }
         inventory.m_onChanged = OnChanged;
-        return isLoaded;
+        isLoaded = true;
     }
 
     protected virtual void SetupInventory()
@@ -336,9 +348,10 @@ public class Bag : ItemDrop.ItemData
     
     public BagSetup GetSetup() => BagSetup.bags[m_shared.m_name];
 
-    public void UpdateWeight()
+    private void UpdateWeight()
     {
         m_shared.m_weight = baseWeight + GetInventoryWeight();
+        m_bagEquipment?.m_player.GetInventory().UpdateTotalWeight();
     }
 
     public float GetInventoryWeight()
@@ -353,6 +366,13 @@ public class Bag : ItemDrop.ItemData
         return total;
     }
 
+    [HarmonyPatch(typeof(ItemDrop.ItemData), nameof(GetWeight))]
+    private static class ItemDrop_ItemData_GetWeight_Patch
+    {
+        [UsedImplicitly]
+        private static void Prefix(ItemDrop.ItemData __instance) => (__instance as Bag)?.Load();
+    }
+    
     [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.Pickup))]
     private static class Humanoid_Pickup_Transpiler
     {
@@ -377,22 +397,29 @@ public class Bag : ItemDrop.ItemData
             return inventory.AddItem(item);
         }
     }
-    
-    [HarmonyPatch(typeof(ItemDrop.ItemData), nameof(GetWeight))]
-    private static class ItemDrop_ItemData_GetWeight_Patch
-    {
-        [UsedImplicitly]
-        private static void Prefix(ItemDrop.ItemData __instance)
-        {
-            if (__instance is not Bag bag) return;
-            bag.UpdateWeight();
-        }
-    }
 
     [HarmonyPatch(typeof(ItemDrop.ItemData), nameof(IsEquipable))]
     private static class ItemDrop_IsEquipable_Patch
     {
         [UsedImplicitly]
         private static void Postfix(ItemDrop.ItemData __instance, ref bool __result) => __result |= __instance is Bag;
+    }
+
+    [HarmonyPatch(typeof(ItemDrop.ItemData), nameof(GetStatusEffectTooltip))]
+    private static class ItemDrop_GetStatusEffectTooltip_Patch
+    {
+        [UsedImplicitly]
+        private static void Prefix(ItemDrop.ItemData __instance, ref float skillLevel)
+        {
+            if (__instance is not Bag bag) return;
+            skillLevel = bag.lantern != null ? 1f : 0f;
+        }
+
+        [UsedImplicitly]
+        private static void Postfix(ItemDrop.ItemData __instance, ref string __result)
+        {
+            if (!lanternNames.Contains(__instance.m_shared.m_name) || !Configs.CharmsAffectBag) return;
+            __result += $"\n{Keys.SECharm}";
+        }
     }
 }

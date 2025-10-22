@@ -11,6 +11,12 @@ public static class InventoryExtensions
 {
     public static bool HasBag(this Inventory inventory) => inventory.m_inventory.FirstOrDefault(x => x is Bag) != null;
     public static bool IsPlayerInventory(this Inventory inventory) => Player.m_localPlayer && inventory == Player.m_localPlayer.GetInventory();
+
+    public static bool CheckMultipleBags(this Inventory inventory, ItemDrop.ItemData item)
+    {
+        if (Configs.MultipleBags || item is not Bag || !inventory.IsPlayerInventory()) return true;
+        return !inventory.HasBag();
+    }
 }
 
 
@@ -51,14 +57,12 @@ public static class Inventory_AddItem_Patch
             __result = false;
             return false;
         }
-
         
         if (__instance is BagInventory bagInventory && !bagInventory.CanAddItem(item))
         {
             __result = false;
             return false;
         }
-        
         return true;
     }
 }

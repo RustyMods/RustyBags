@@ -26,6 +26,7 @@ public class BagEquipment : MonoBehaviour
     public string m_atgeirItem = "";
     public string m_oreItem = "";
     public int m_oreStack;
+    public string m_scytheItem = "";
     
     public int m_currentBagHash;
     public int m_currentLanternHash;
@@ -40,6 +41,7 @@ public class BagEquipment : MonoBehaviour
     public int m_currentAtgeirHash;
     public int m_currentOreHash;
     public int m_currentOreStack;
+    public int m_currentScythHash;
     
     public GameObject? m_bagInstance;
     private GameObject? m_lanternInstance;
@@ -52,6 +54,9 @@ public class BagEquipment : MonoBehaviour
     private GameObject? m_hoeInstance;
     private GameObject? m_atgeirInstance;
     private readonly List<GameObject> m_oreInstances = new();
+    private GameObject? m_scythInstance;
+
+    public StatusEffect? m_currentEquipStatus;
     
     public void Awake()
     {
@@ -90,18 +95,32 @@ public class BagEquipment : MonoBehaviour
             SetHoeItem(m_currentBagItem?.hoe?.m_dropPrefab.name ?? "");
             SetAtgeirItem(m_currentBagItem?.atgeir?.m_dropPrefab.name ?? "");
             SetOreItem(m_currentBagItem?.ore?.m_dropPrefab.name ?? "", m_currentBagItem?.ore?.m_stack ?? 0);
+            SetScytheItem(m_currentBagItem?.scythe?.m_dropPrefab.name ?? "");
             SetArrowItem("", 0);
         }
 
-        SetupEquipStatusEffect(oldSE, newSE, m_currentBagItem?.m_quality ?? 1);
+        SetupEquipStatusEffect(oldSE, newSE, m_currentBagItem?.m_quality ?? 1, m_currentBagItem?.lantern != null);
         return true;
     }
 
-    public void SetupEquipStatusEffect(StatusEffect? old, StatusEffect? se, int quality)
+    public void SetupEquipStatusEffect(StatusEffect? old, StatusEffect? se, int quality, bool hasLantern = false)
     {
         if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
-        if (old != null) m_player.GetSEMan()?.RemoveStatusEffect(old.NameHash());
-        if (se != null) m_player.GetSEMan()?.AddStatusEffect(se.NameHash(), false, quality);
+        if (old != null)
+        {
+            m_player.GetSEMan()?.RemoveStatusEffect(old.NameHash());
+            m_currentEquipStatus = null;
+        }
+        if (se != null)
+        {
+            m_currentEquipStatus = m_player.GetSEMan()?.AddStatusEffect(se.NameHash(), false, quality, hasLantern ? 1f : 0f);
+        }
+    }
+
+    public void UpdateEquipStatusEffect()
+    {
+        if (m_currentEquipStatus is not SE_Bag se || m_currentBagItem == null) return;
+        se.SetLevel(m_currentBagItem.m_quality, m_currentBagItem.lantern != null ? 1f : 0f);
     }
 
     public void SetFishingRodItem(string item)
@@ -196,6 +215,14 @@ public class BagEquipment : MonoBehaviour
         m_nview.GetZDO().Set(BagVars.OreStack, stack);
     }
 
+    public void SetScytheItem(string item)
+    {
+        m_scytheItem = item;
+        if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
+        int scythHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
+        m_nview.GetZDO().Set(BagVars.Scyth, scythHash);
+    }
+
     private static GameObject? AttachItem(int hash, Transform joint)
     {
         Transform? attach = ObjectDB.instance?.GetItemPrefab(hash)?.transform.Find("attach");
@@ -219,6 +246,7 @@ public class BagEquipment : MonoBehaviour
         m_hammerInstance = null;
         m_fishingRodInstance = null;
         m_oreInstances.Clear();
+        m_scythInstance = null;
     }
 
     public void ResetHashes()
@@ -235,6 +263,7 @@ public class BagEquipment : MonoBehaviour
         m_currentArrowStack = 0;
         m_currentOreHash = 0;
         m_currentOreStack = 0;
+        m_currentScythHash = 0;
     }
 
     public void SetBagEquipped(int hash)
@@ -320,6 +349,16 @@ public class BagEquipment : MonoBehaviour
         m_currentPickaxeHash = hash;
         if (hash == 0 || m_bagInstance.transform.Find("attach_pickaxe") is not {} attachPickaxe) return;
         m_pickaxeInstance = AttachItem(hash, attachPickaxe);
+    }
+
+    public void SetScytheEquipped(int hash)
+    {
+        if (m_currentScythHash == hash || m_bagInstance == null) return;
+        if (m_scythInstance) Destroy(m_scythInstance);
+        m_scythInstance = null;
+        m_currentScythHash = hash;
+        if (hash == 0 || m_bagInstance.transform.Find("attach_scyth") is not { } attachScyth) return;
+        m_scythInstance = AttachItem(hash, attachScyth);
     }
 
     public void SetCultivatorEquipped(int hash)
@@ -516,6 +555,7 @@ public class BagEquipment : MonoBehaviour
         int atgeirHash = zdo?.GetInt(BagVars.Atgeir) ?? (string.IsNullOrEmpty(m_atgeirItem) ? 0 : m_atgeirItem.GetStableHashCode());
         int oreHash = zdo?.GetInt(BagVars.Ore) ?? (string.IsNullOrEmpty(m_oreItem) ? 0 : m_oreItem.GetStableHashCode());
         int oreStack = zdo?.GetInt(BagVars.OreStack) ?? m_oreStack;
+        int scythHash = zdo?.GetInt(BagVars.Scyth) ?? (string.IsNullOrEmpty(m_scytheItem) ? 0 : m_scytheItem.GetStableHashCode());
         
         SetBagEquipped(bagHash);
         SetLanternEquipped(lanternHash);
@@ -528,6 +568,7 @@ public class BagEquipment : MonoBehaviour
         SetMeleeEquipped(meleeHash);
         SetAtgeirEquipped(atgeirHash);
         SetOreEquipped(oreHash, oreStack);
+        SetScytheEquipped(scythHash);
     }
     
     [HarmonyPatch(typeof(VisEquipment), nameof(VisEquipment.UpdateVisuals))]
@@ -599,6 +640,7 @@ public class BagEquipment : MonoBehaviour
     [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.UnequipAllItems))]
     private static class Humanoid_UnequipAllItems_Patch
     {
+        [UsedImplicitly]
         private static void Prefix(Humanoid __instance)
         {
             if (!__instance.TryGetComponent(out BagEquipment component)) return;
@@ -618,7 +660,6 @@ public class BagEquipment : MonoBehaviour
                 // make sure even unequipped bags are loaded to account for total player inventory weight
                 bag.Load();
             }
-            __instance.m_inventory.UpdateTotalWeight();
         }
     }
 }
@@ -638,4 +679,5 @@ public static class BagVars
     public static readonly int Atgeir = "ExtraSlot.Bag.Atgeir".GetStableHashCode();
     public static readonly int Ore = "ExtraSlot.Bag.Ore".GetStableHashCode();
     public static readonly int OreStack = "ExtraSlot.Bag.OreStack".GetStableHashCode();
+    public static readonly int Scyth = "ExtraSlot.Bag.Scyth".GetStableHashCode();
 }

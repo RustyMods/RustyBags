@@ -15,6 +15,7 @@ public class SE_Bag : SE_Stats
 
     public BagSetup data = null!;
     public int m_quality = 1;
+    public bool m_hasCharm;
     public float m_baseCarryWeight;
     public float m_carryWeightPerQuality = 10f;
     public float m_inventoryWeightModifier;
@@ -30,6 +31,8 @@ public class SE_Bag : SE_Stats
         m_quality = itemLevel;
         if (baseCarryWeight > 0f) m_addMaxCarryWeight = baseCarryWeight + m_quality * m_carryWeightPerQuality;
         if (movementSpeedModifierCfg != null) m_speedModifier = movementSpeedModifierCfg.Value;
+        m_hasCharm = skillLevel > 0f;
+        if (m_hasCharm && Configs.CharmsAffectBag) m_speedModifier = 0f;
     }
 
     public virtual void ModifyInventoryWeight(Inventory inventory, ref float weight)
@@ -50,20 +53,17 @@ public class SE_Bag : SE_Stats
         string tooltip = base.GetTooltipString();
         sb.Append(tooltip);
         AddInventoryWeightTooltip();
-        if (data.sizes.TryGetValue(m_quality, out var size))
+        if (data.sizes.TryGetValue(m_quality, out BagSetup.Size? size))
         {
             sb.AppendFormat("{0}: <color=orange>{1}x{2}</color>", Keys.InventorySize, size.width, size.height);
         }
-
         return sb.ToString();
     }
 
     public virtual void AddInventoryWeightTooltip()
     {
-        if (m_inventoryWeightModifier != 0f)
-        {
-            sb.AppendFormat("{0}: <color=orange>{1:+0;-0}%</color>\n", Keys.BagWeight, (inventoryWeightModifier - 1f) * 100);
-        }
+        if (m_inventoryWeightModifier == 0f) return;
+        sb.AppendFormat("{0}: <color=orange>{1:+0;-0}%</color>\n", Keys.BagWeight, (inventoryWeightModifier - 1f) * 100);
     }
 }
 
@@ -91,15 +91,19 @@ public class SE_OreBag : SE_Bag
     public override void ModifyInventoryWeight(Inventory inventory, ref float weight)
     {
         float total = 0f;
-        foreach (ItemDrop.ItemData? item in inventory.GetAllItems())
+        List<ItemDrop.ItemData>? list = inventory.GetAllItems();
+        for (int index = 0; index < list.Count; ++index)
         {
+            ItemDrop.ItemData? item = list[index];
             var w = item.GetWeight();
             if (ores.Contains(item.m_shared.m_name))
             {
                 w *= Mathf.Max(1f - inventoryWeightModifier, 0f);
             }
+
             total += w;
         }
+
         weight = total;
     }
     

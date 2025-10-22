@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
@@ -16,6 +14,13 @@ public static class BagGui
     private static readonly int visible = Animator.StringToHash("visible");
 
     public static Bag? m_currentBag;
+
+    private static readonly bool AutoOpen;
+
+    static BagGui()
+    {
+        AutoOpen = Harmony.GetPatchInfo(AccessTools.Method(typeof(InventoryGui), nameof(InventoryGui.UpdateContainer))).Owners.Count == 1;
+    }
 
     [HarmonyPatch(typeof(Player), nameof(Player.SetLocalPlayer))]
     private static class Player_SetLocalPlayer_Patch
@@ -33,7 +38,7 @@ public static class BagGui
         {
             if (item == null || item.m_shared.m_questItem || mod is not InventoryGrid.Modifier.Move || __instance.m_dragGo) return true;
 
-            var localPlayer = Player.m_localPlayer;
+            Player? localPlayer = Player.m_localPlayer;
             if (localPlayer.IsTeleporting()) return false;
             
             if (__instance.m_currentContainer != null)
@@ -57,7 +62,7 @@ public static class BagGui
                 __instance.m_moveItemEffects.Create(__instance.transform.position, Quaternion.identity); 
                 return false;
             }
-
+            
             return true;
         }
     }
@@ -111,18 +116,6 @@ public static class BagGui
         }
     }
     
-    [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.UpdateInventoryWeight))]
-    private static class InventoryGui_UpdateInventoryWeight_Patch
-    {
-        [UsedImplicitly]
-        private static void Prefix(InventoryGui __instance, Player player)
-        {
-            if (m_currentBag == null) return;
-            m_currentBag.UpdateWeight();
-            player.GetInventory().UpdateTotalWeight();
-        }
-    }
-    
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.UpdateContainerWeight))]
     private static class InventoryGui_UpdateContainerWeight_Patch
     {
@@ -131,16 +124,6 @@ public static class BagGui
         {
             if (__instance.m_currentContainer != null || m_currentBag is not { isOpen: true }) return;
             __instance.m_containerWeight.text = Mathf.CeilToInt(m_currentBag.GetInventoryWeight()).ToString();
-        }
-    }
-    
-    [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Show))]
-    private static class InventoryGui_Show_Patch
-    {
-        [UsedImplicitly]
-        private static void Prefix(Container? container)
-        {
-            if (m_currentBag?.Load() ?? false) Player.m_localPlayer?.GetInventory().Changed();;
         }
     }
 
@@ -161,7 +144,7 @@ public static class BagGui
             if (!__instance.m_animator.GetBool(visible)) return true;
             if (__instance.m_currentContainer != null || m_currentBag == null) return true;
             
-            if (__instance.IsStackAllButtonHidden())
+            if (!AutoOpen || __instance.IsStackAllButtonHidden())
             {
                 Vector2i pos = new Vector2i(Mathf.RoundToInt(ZInput.mousePosition.x), Mathf.RoundToInt(ZInput.mousePosition.y));
                 ItemDrop.ItemData? item = __instance.m_playerGrid.GetItem(pos);
@@ -241,6 +224,10 @@ public static class BagGui
     {
         [UsedImplicitly]
         private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) => AddBagWornItems(instructions);
+
+        // I do not know why, but without this postfix, durability changes to items in bag are not saved
+        [UsedImplicitly]
+        private static void Postfix() => Player.m_localPlayer?.GetEquippedBag()?.inventory.Changed();
     }
 
     private static IEnumerable<CodeInstruction> AddBagWornItems(IEnumerable<CodeInstruction> instructions)

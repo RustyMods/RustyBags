@@ -72,6 +72,7 @@ public static class Lanterns
         GhostLantern.RequiredItems.Add("Resin", 10);
         GhostLantern.Configurable = Configurability.Disabled;
         Bag.RegisterLantern($"${GhostLantern.Name.Key}");
+        
         loaded = true;
     }
 
