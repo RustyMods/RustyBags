@@ -46,7 +46,7 @@ public class Quiver : Bag
         [UsedImplicitly]
         private static bool Prefix(Humanoid character, ref bool __result)
         {
-            if (character.GetEquippedBag() is not Quiver) return true;
+            if (character.GetEquippedBag() is not Quiver quiver || quiver.ammoItem == null) return true;
             __result = true;
             return false;
         }
@@ -71,6 +71,7 @@ public class Quiver : Bag
         {
             if (__result || character.GetEquippedBag() is not Quiver quiver || string.IsNullOrEmpty(weapon.m_shared.m_ammoType)) return true;
             if (quiver.ammoItem == null) return true;
+            
             __result = quiver.ammoItem.m_shared.m_itemType != ItemType.Consumable || character.CanConsumeItem(quiver.ammoItem);
             return false;
         }

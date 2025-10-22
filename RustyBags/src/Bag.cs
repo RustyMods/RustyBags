@@ -176,7 +176,7 @@ public class Bag : ItemDrop.ItemData
     public static void RegisterLantern(string name) => lanternNames.Add(name);
     
     public BagInventory inventory = new("Bag", null, null, 8, 4);
-    private bool isLoaded;
+    public bool isLoaded;
     private readonly float baseWeight;
     public bool isOpen;
 
@@ -198,6 +198,8 @@ public class Bag : ItemDrop.ItemData
         m_shared.m_itemType = ItemType.Misc;
         m_customData = item.m_customData;
         baseWeight = m_shared.m_weight;
+
+        inventory.m_onChanged = OnChanged;
     }
 
     public void Open()

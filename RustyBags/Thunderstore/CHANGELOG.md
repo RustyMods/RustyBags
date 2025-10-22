@@ -1,3 +1,6 @@
+# 1.1.2
+- fixed quiver allowing to pull bow back even when no arrows in player inventory nor quiver
+
 # 1.1.1
 - Fixed auto-stack not updating player inventory weight on pickup
 - added scyth attach

@@ -1,6 +1,6 @@
 {
   "name": "RustyBags",
-  "version_number": "1.1.1",
+  "version_number": "1.1.2",
   "website_url": "https://github.com/RustyMods/RustyBags",
   "description": "Yet another bag mod, but this time, lanterns and weapons show up attached to bag - also quivers",
   "dependencies": [

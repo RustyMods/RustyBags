@@ -112,6 +112,7 @@ public static class BagGui
         {
             if (item is not Bag bag || instance.m_craftUpgradeItem is not Bag oldBag) return;
             bag.m_customData = new(oldBag.m_customData);
+            bag.isLoaded = false;
             bag.Load();
         }
     }
