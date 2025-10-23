@@ -192,6 +192,7 @@ public class Bag : ItemDrop.ItemData
     public ItemDrop.ItemData? atgeir;
     public ItemDrop.ItemData? ore;
     public ItemDrop.ItemData? scythe;
+    public ItemDrop.ItemData? harpoon;
     public Bag(ItemDrop.ItemData item)
     {
         m_shared = item.m_shared;
@@ -225,6 +226,7 @@ public class Bag : ItemDrop.ItemData
     {
         m_equipped = false;
         UpdateWeight();
+        SaveInventory();
         m_bagEquipment = null;
         if (BagGui.m_currentBag != this) return;
         BagGui.m_currentBag = null;
@@ -259,70 +261,78 @@ public class Bag : ItemDrop.ItemData
         atgeir = null;
         ore = null;
         scythe = null;
+        harpoon = null;
 
         List<ItemDrop.ItemData>? list = inventory.GetAllItemsInGridOrder();
-        for (var index = 0; index < list.Count; ++index)
+        for (int index = 0; index < list.Count; ++index)
         {
-            ItemDrop.ItemData? item = list[index];
             if (lantern != null && fishingRod != null && cultivator != null && hoe != null && hammer != null &&
-                pickaxe != null && melee != null && atgeir != null && ore != null && scythe != null) break;
-
-            if (SE_OreBag.ores.Contains(item.m_shared.m_name) && ore == null)
+                pickaxe != null && melee != null && atgeir != null && ore != null && scythe != null && harpoon != null) break;
+            
+            ItemDrop.ItemData? item = list[index];
+            if (SE_OreBag.ores.Contains(item.m_shared.m_name))
             {
-                ore = item;
+                ore ??= item;
                 continue;
             }
 
             if (!item.IsEquipable()) continue;
-            if (lanternNames.Contains(item.m_shared.m_name) && lantern == null)
+            
+            if (lanternNames.Contains(item.m_shared.m_name))
             {
-                lantern = item;
+                lantern ??= item;
             }
-            else if (item.m_shared.m_name == "$item_fishingrod" && fishingRod == null)
+            else if (item.m_shared.m_name == "$item_fishingrod")
             {
-                fishingRod = item;
+                fishingRod ??= item;
             }
-            else if (item.m_shared.m_name == "$item_cultivator" && cultivator == null)
+            else if (item.m_shared.m_name == "$item_cultivator")
             {
-                cultivator = item;
+                cultivator ??= item;
             }
-            else if (item.m_shared.m_name == "$item_hoe" && hoe == null)
+            else if (item.m_shared.m_name == "$item_spear_chitin")
             {
-                hoe = item;
+                harpoon ??= item;
             }
-            else if (item.m_shared.m_name == "$item_hammer" && hammer == null)
+            else if (item.m_shared.m_name == "$item_hoe")
             {
-                hammer = item;
+                hoe ??= item;
             }
-            else if (item.m_shared.m_name == "$item_scythe" && scythe == null)
+            else if (item.m_shared.m_name == "$item_hammer")
             {
-                scythe = item;
+                hammer ??= item;
             }
-            else if (item.m_shared.m_skillType is Skills.SkillType.Pickaxes && pickaxe == null)
+            else if (item.m_shared.m_name == "$item_scythe")
             {
-                pickaxe = item;
+                scythe ??= item;
             }
-            else if (item.m_shared.m_itemType is ItemType.OneHandedWeapon && melee == null)
+            else if (item.m_shared.m_skillType is Skills.SkillType.Pickaxes)
             {
-                melee = item;
+                pickaxe ??= item;
             }
-            else if (item.m_shared.m_skillType is Skills.SkillType.Polearms && atgeir == null)
+            else if (item.m_shared.m_itemType is ItemType.OneHandedWeapon)
             {
-                atgeir = item;
+                melee ??= item;
+            }
+            else if (item.m_shared.m_skillType is Skills.SkillType.Polearms)
+            {
+                atgeir ??= item;
             }
         }
 
-        m_bagEquipment?.SetLanternItem(lantern?.m_dropPrefab.name ?? "");
-        m_bagEquipment?.SetPickaxeItem(pickaxe?.m_dropPrefab.name ?? "");
-        m_bagEquipment?.SetFishingRodItem(fishingRod?.m_dropPrefab.name ?? "");
-        m_bagEquipment?.SetCultivatorItem(cultivator?.m_dropPrefab.name ?? "");
-        m_bagEquipment?.SetHammerItem(hammer?.m_dropPrefab.name ?? "");
-        m_bagEquipment?.SetHoeItem(hoe?.m_dropPrefab.name ?? "");
-        m_bagEquipment?.SetMeleeItem(melee?.m_dropPrefab.name ?? "");
-        m_bagEquipment?.SetAtgeirItem(atgeir?.m_dropPrefab.name ?? "");
-        m_bagEquipment?.SetOreItem(ore?.m_dropPrefab.name ?? "", ore?.m_stack ?? 0);
-        m_bagEquipment?.SetScytheItem(scythe?.m_dropPrefab.name ?? "");
-        m_bagEquipment?.UpdateEquipStatusEffect();
+        if (m_bagEquipment == null) return;
+        m_bagEquipment.SetLanternItem(lantern?.m_dropPrefab.name ?? "");
+        m_bagEquipment.SetPickaxeItem(pickaxe?.m_dropPrefab.name ?? "");
+        m_bagEquipment.SetFishingRodItem(fishingRod?.m_dropPrefab.name ?? "");
+        m_bagEquipment.SetCultivatorItem(cultivator?.m_dropPrefab.name ?? "");
+        m_bagEquipment.SetHammerItem(hammer?.m_dropPrefab.name ?? "");
+        m_bagEquipment.SetHoeItem(hoe?.m_dropPrefab.name ?? "");
+        m_bagEquipment.SetMeleeItem(melee?.m_dropPrefab.name ?? "");
+        m_bagEquipment.SetAtgeirItem(atgeir?.m_dropPrefab.name ?? "");
+        m_bagEquipment.SetOreItem(ore?.m_dropPrefab.name ?? "", ore?.m_stack ?? 0);
+        m_bagEquipment.SetScytheItem(scythe?.m_dropPrefab.name ?? "");
+        m_bagEquipment.SetHarpoonItem(harpoon?.m_dropPrefab.name ?? "");
+        m_bagEquipment.UpdateEquipStatusEffect();
     }
 
     public void Load()
@@ -395,7 +405,10 @@ public class Bag : ItemDrop.ItemData
 
         public static bool AddIntoBag(Inventory inventory, ItemDrop.ItemData item, Humanoid instance)
         {
-            if (Configs.AutoStack && instance.GetEquippedBag() is { } bag && bag.inventory.ContainsItemByName(item.m_shared.m_name)) return bag.inventory.AddItem(item);
+            if (Configs.AutoStack && instance.GetEquippedBag() is { } bag && bag.inventory.ContainsItemByName(item.m_shared.m_name))
+            {
+                return bag.inventory.AddItem(item) || inventory.AddItem(item);
+            }
             return inventory.AddItem(item);
         }
     }

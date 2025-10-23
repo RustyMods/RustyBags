@@ -1,3 +1,8 @@
+# 1.1.3
+- added zen construction and azu crafty boxes as soft dependency to make sure mod loads after theirs to check for conflicts
+- fixed auto-pickup not picking up when bag is full and inventory has space
+- added abyssal harpoon attach point
+
 # 1.1.2
 - fixed quiver allowing to pull bow back even when no arrows in player inventory nor quiver
 

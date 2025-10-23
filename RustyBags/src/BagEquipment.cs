@@ -27,6 +27,7 @@ public class BagEquipment : MonoBehaviour
     public string m_oreItem = "";
     public int m_oreStack;
     public string m_scytheItem = "";
+    public string m_harpoonItem = "";
     
     public int m_currentBagHash;
     public int m_currentLanternHash;
@@ -42,6 +43,7 @@ public class BagEquipment : MonoBehaviour
     public int m_currentOreHash;
     public int m_currentOreStack;
     public int m_currentScythHash;
+    public int m_currentHarpoonHash;
     
     public GameObject? m_bagInstance;
     private GameObject? m_lanternInstance;
@@ -55,6 +57,7 @@ public class BagEquipment : MonoBehaviour
     private GameObject? m_atgeirInstance;
     private readonly List<GameObject> m_oreInstances = new();
     private GameObject? m_scythInstance;
+    private GameObject? m_harpoonInstance;
 
     public StatusEffect? m_currentEquipStatus;
     
@@ -96,6 +99,7 @@ public class BagEquipment : MonoBehaviour
             SetAtgeirItem(m_currentBagItem?.atgeir?.m_dropPrefab.name ?? "");
             SetOreItem(m_currentBagItem?.ore?.m_dropPrefab.name ?? "", m_currentBagItem?.ore?.m_stack ?? 0);
             SetScytheItem(m_currentBagItem?.scythe?.m_dropPrefab.name ?? "");
+            SetHarpoonItem(m_currentBagItem?.harpoon?.m_dropPrefab.name ?? "");
             SetArrowItem("", 0);
         }
 
@@ -223,6 +227,14 @@ public class BagEquipment : MonoBehaviour
         m_nview.GetZDO().Set(BagVars.Scyth, scythHash);
     }
 
+    public void SetHarpoonItem(string item)
+    {
+        m_harpoonItem = item;
+        if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
+        int harpoonHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
+        m_nview.GetZDO().Set(BagVars.Harpoon, harpoonHash);
+    }
+    
     private static GameObject? AttachItem(int hash, Transform joint)
     {
         Transform? attach = ObjectDB.instance?.GetItemPrefab(hash)?.transform.Find("attach");
@@ -247,6 +259,7 @@ public class BagEquipment : MonoBehaviour
         m_fishingRodInstance = null;
         m_oreInstances.Clear();
         m_scythInstance = null;
+        m_harpoonInstance = null;
     }
 
     public void ResetHashes()
@@ -264,6 +277,7 @@ public class BagEquipment : MonoBehaviour
         m_currentOreHash = 0;
         m_currentOreStack = 0;
         m_currentScythHash = 0;
+        m_currentHarpoonHash = 0;
     }
 
     public void SetBagEquipped(int hash)
@@ -298,6 +312,16 @@ public class BagEquipment : MonoBehaviour
         m_currentAtgeirHash = hash;
         if (hash == 0 || m_bagInstance.transform.Find("attach_atgeir") is not { } attachAtgeir) return;
         m_atgeirInstance = AttachItem(hash, attachAtgeir);
+    }
+
+    public void SetHarpoonEquipped(int hash)
+    {
+        if (m_currentHarpoonHash == hash || m_bagInstance == null) return;
+        if (m_harpoonInstance) Destroy(m_harpoonInstance);
+        m_harpoonInstance = null;
+        m_currentHarpoonHash = hash;
+        if (hash == 0 || m_bagInstance.transform.Find("attach_harpoon") is not { } attachHarpoon) return;
+        m_harpoonInstance = AttachItem(hash, attachHarpoon);
     }
 
     public void SetMeleeEquipped(int hash)
@@ -535,8 +559,6 @@ public class BagEquipment : MonoBehaviour
                 }
             }
         }
-        
-
     }
     
     public void UpdateVisuals()
@@ -556,6 +578,7 @@ public class BagEquipment : MonoBehaviour
         int oreHash = zdo?.GetInt(BagVars.Ore) ?? (string.IsNullOrEmpty(m_oreItem) ? 0 : m_oreItem.GetStableHashCode());
         int oreStack = zdo?.GetInt(BagVars.OreStack) ?? m_oreStack;
         int scythHash = zdo?.GetInt(BagVars.Scyth) ?? (string.IsNullOrEmpty(m_scytheItem) ? 0 : m_scytheItem.GetStableHashCode());
+        int harpoonHash = zdo?.GetInt(BagVars.Harpoon) ?? (string.IsNullOrEmpty(m_harpoonItem) ? 0 : m_harpoonItem.GetStableHashCode());
         
         SetBagEquipped(bagHash);
         SetLanternEquipped(lanternHash);
@@ -569,6 +592,7 @@ public class BagEquipment : MonoBehaviour
         SetAtgeirEquipped(atgeirHash);
         SetOreEquipped(oreHash, oreStack);
         SetScytheEquipped(scythHash);
+        SetHarpoonEquipped(harpoonHash);
     }
     
     [HarmonyPatch(typeof(VisEquipment), nameof(VisEquipment.UpdateVisuals))]
@@ -680,4 +704,5 @@ public static class BagVars
     public static readonly int Ore = "ExtraSlot.Bag.Ore".GetStableHashCode();
     public static readonly int OreStack = "ExtraSlot.Bag.OreStack".GetStableHashCode();
     public static readonly int Scyth = "ExtraSlot.Bag.Scyth".GetStableHashCode();
+    public static readonly int Harpoon = "ExtraSlot.Bag.Harpoon".GetStableHashCode();
 }

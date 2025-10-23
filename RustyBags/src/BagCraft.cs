@@ -9,7 +9,7 @@ namespace RustyBags;
 
 public static class BagCraft
 {
-    private static readonly Harmony harmony;
+    private static Harmony? harmony;
     private const string CraftFromBag_ID = "RustyBags.CraftFromBag";
     public static int CountItems(Inventory inventory, string sharedName, int quality, bool matchWorldLevel, Player player)
     {
@@ -53,20 +53,18 @@ public static class BagCraft
         }
     }
 
-    public static void CheckOtherPatches()
-    {
-        if (!HasConflicts()) return;
-        harmony.UnpatchSelf();
-        RustyBagsPlugin.RustyBagsLogger.LogWarning("Found conflicts with craft from bags, disabling craft from bag.");
-    }
-
     private static bool HasConflicts()
     {
-        return Harmony.GetPatchInfo(AccessTools.Method(typeof(Player), nameof(Player.HaveRequirementItems))).Owners.Count > 1;
+        return Harmony.GetPatchInfo(AccessTools.Method(typeof(Player), nameof(Player.HaveRequirementItems)))?.Owners.Count > 0;
     }
-    
-    static BagCraft()
+
+    public static void Init()
     {
+        if (HasConflicts())
+        {
+            RustyBagsPlugin.RustyBagsLogger.LogWarning("Found conflicts with craft from bags, disabling craft from bag.");
+            return;
+        }
         harmony = new Harmony(CraftFromBag_ID);
         harmony.Patch(AccessTools.DeclaredMethod(typeof(Player),nameof(Player.HaveRequirementItems)), transpiler: new HarmonyMethod(typeof(BagCraft), nameof(HaveRequirementItems_Transpiler)));
         harmony.Patch(AccessTools.DeclaredMethod(typeof(Player),nameof(Player.GetFirstRequiredItem)), prefix: new HarmonyMethod(typeof(BagCraft), nameof(GetFirstRequiredItem_Prefix)));
