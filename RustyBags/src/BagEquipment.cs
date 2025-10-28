@@ -245,7 +245,7 @@ public class BagEquipment : MonoBehaviour
         return go;
     }
 
-    public void ClearInstances()
+    public void ResetAttachInstances()
     {
         m_bagInstance = null;
         m_lanternInstance = null;
@@ -262,7 +262,7 @@ public class BagEquipment : MonoBehaviour
         m_harpoonInstance = null;
     }
 
-    public void ResetHashes()
+    public void ResetAttachHashes()
     {
         m_currentLanternHash = 0;
         m_currentPickaxeHash = 0;
@@ -286,10 +286,10 @@ public class BagEquipment : MonoBehaviour
         if (m_bagInstance != null)
         {
             Destroy(m_bagInstance);
-            ClearInstances();
+            ResetAttachInstances();
         }
         m_currentBagHash = hash;
-        ResetHashes();
+        ResetAttachHashes();
         if (hash == 0) return;
         m_bagInstance = m_visEquipment.AttachItem(hash, 0, m_visEquipment.m_backShield);
     }
@@ -448,8 +448,7 @@ public class BagEquipment : MonoBehaviour
                 GameObject? go = Instantiate(model, child);
                 VisEquipment.CleanupInstance(go);
                 go.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
-                if (go.GetComponentInChildren<Light>() is { } light) light.enabled = false;
-                if (go.GetComponentInChildren<ParticleSystem>() is {} ps) ps.Stop();
+                CleanUpArrow(go);
                 m_arrowInstances.Add(go);
                 ++count;
             }
@@ -478,13 +477,18 @@ public class BagEquipment : MonoBehaviour
                     GameObject? go = Instantiate(model, child);
                     VisEquipment.CleanupInstance(go);
                     go.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
-                    if (go.GetComponentInChildren<Light>() is { } light) light.enabled = false;
-                    if (go.GetComponentInChildren<ParticleSystem>() is {} ps) ps.Stop();
+                    CleanUpArrow(go);
                     m_arrowInstances.Add(go);
                     --difference;
                 }
             }
         }
+    }
+
+    public static void CleanUpArrow(GameObject go)
+    {
+        if (go.GetComponentInChildren<Light>() is { } light) light.enabled = false;
+        if (go.GetComponentInChildren<ParticleSystem>() is {} ps) ps.Stop();
     }
 
     public void SetOreEquipped(int hash, int stack)

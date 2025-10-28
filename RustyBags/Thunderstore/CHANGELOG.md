@@ -1,3 +1,6 @@
+# 1.1.4
+- fixed bag not updating visuals if player dies / destroyed, needed to re-bind delegate
+
 # 1.1.3
 - added zen construction and azu crafty boxes as soft dependency to make sure mod loads after theirs to check for conflicts
 - fixed auto-pickup not picking up when bag is full and inventory has space

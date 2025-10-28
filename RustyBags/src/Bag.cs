@@ -220,6 +220,7 @@ public class Bag : ItemDrop.ItemData
         m_bagEquipment = equipment;
         m_equipped = true;
         Load();
+        inventory.m_onChanged = OnChanged; // need to re-bind delegate to hold reference to new m_bagEquipment
     }
 
     public void OnUnequip()

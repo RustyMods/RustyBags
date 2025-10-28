@@ -36,7 +36,6 @@ public class Quiver : Bag
                 item.m_equipped = false;
             }
         }
-
         m_bagEquipment?.SetArrowItem(ammoItem?.m_dropPrefab.name ?? "", ammoItem?.m_stack ?? 0);
     }
 
