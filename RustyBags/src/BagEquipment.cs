@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using HarmonyLib;
 using JetBrains.Annotations;
+using RustyBags.Managers;
 using UnityEngine;
 
 namespace RustyBags;
@@ -103,11 +104,11 @@ public class BagEquipment : MonoBehaviour
             SetArrowItem("", 0);
         }
 
-        SetupEquipStatusEffect(oldSE, newSE, m_currentBagItem?.m_quality ?? 1, m_currentBagItem?.lantern != null);
+        SetupEquipStatusEffect(oldSE, newSE, m_currentBagItem?.m_quality ?? 1, m_currentBagItem?.lantern?.GetCharmData());
         return true;
     }
 
-    public void SetupEquipStatusEffect(StatusEffect? old, StatusEffect? se, int quality, bool hasLantern = false)
+    public void SetupEquipStatusEffect(StatusEffect? old, StatusEffect? se, int quality, Charm? charm)
     {
         if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
         if (old != null)
@@ -117,14 +118,15 @@ public class BagEquipment : MonoBehaviour
         }
         if (se != null)
         {
-            m_currentEquipStatus = m_player.GetSEMan()?.AddStatusEffect(se.NameHash(), false, quality, hasLantern ? 1f : 0f);
+            m_currentEquipStatus = m_player.GetSEMan()?.AddStatusEffect(se.NameHash(), false, quality);
+            if (Configs.CharmsAffectBag) (m_currentEquipStatus as SE_Bag)?.SetBag(m_currentBagItem);
         }
     }
 
     public void UpdateEquipStatusEffect()
     {
-        if (m_currentEquipStatus is not SE_Bag se || m_currentBagItem == null) return;
-        se.SetLevel(m_currentBagItem.m_quality, m_currentBagItem.lantern != null ? 1f : 0f);
+        if (!Configs.CharmsAffectBag || m_currentEquipStatus is not SE_Bag se) return;
+        se.SetBag(m_currentBagItem);
     }
 
     public void SetFishingRodItem(string item)
@@ -458,7 +460,7 @@ public class BagEquipment : MonoBehaviour
             if (m_currentArrowStack < previousStack)
             {
                 int difference = previousStack - m_currentArrowStack;
-                for (int i = m_arrowInstances.Count - 1; i >= 0 && difference > 0; i--)
+                for (int i = m_arrowInstances.Count - 1; i >= 0 && difference > 0; --i)
                 {
                     GameObject? instance = m_arrowInstances[i];
                     if (m_visEquipment.m_lodGroup) Utils.RemoveFromLodgroup(m_visEquipment.m_lodGroup, instance);
@@ -540,7 +542,7 @@ public class BagEquipment : MonoBehaviour
             if (m_currentOreStack < previousStack)
             {
                 int difference = previousStack - m_currentOreStack;
-                for (int i = m_oreInstances.Count - 1; i >= 0 && difference > 0; i--)
+                for (int i = m_oreInstances.Count - 1; i >= 0 && difference > 0; --i)
                 {
                     GameObject? instance = m_oreInstances[i];
                     Destroy(instance);

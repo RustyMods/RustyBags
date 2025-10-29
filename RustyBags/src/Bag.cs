@@ -427,15 +427,15 @@ public class Bag : ItemDrop.ItemData
         [UsedImplicitly]
         private static void Prefix(ItemDrop.ItemData __instance, ref float skillLevel)
         {
-            if (__instance is not Bag bag) return;
-            skillLevel = bag.lantern != null ? 1f : 0f;
+            if (!Configs.CharmsAffectBag || __instance is not Bag bag) return;
+            (bag.m_shared.m_equipStatusEffect as SE_Bag)?.SetBag(bag);
         }
 
         [UsedImplicitly]
         private static void Postfix(ItemDrop.ItemData __instance, ref string __result)
         {
-            if (!lanternNames.Contains(__instance.m_shared.m_name) || !Configs.CharmsAffectBag) return;
-            __result += $"\n{Keys.SECharm}";
+            if (!Configs.CharmsAffectBag || __instance.GetCharmData() is not { } data) return;
+            __result += data.GetTooltip();
         }
     }
 }

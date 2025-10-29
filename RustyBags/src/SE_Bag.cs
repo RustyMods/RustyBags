@@ -15,7 +15,6 @@ public class SE_Bag : SE_Stats
 
     public BagSetup data = null!;
     public int m_quality = 1;
-    public bool m_hasCharm;
     public float m_baseCarryWeight;
     public float m_carryWeightPerQuality = 10f;
     public float m_inventoryWeightModifier;
@@ -29,10 +28,45 @@ public class SE_Bag : SE_Stats
     public override void SetLevel(int itemLevel, float skillLevel)
     {
         m_quality = itemLevel;
-        if (baseCarryWeight > 0f) m_addMaxCarryWeight = baseCarryWeight + m_quality * m_carryWeightPerQuality;
-        if (movementSpeedModifierCfg != null) m_speedModifier = movementSpeedModifierCfg.Value;
-        m_hasCharm = skillLevel > 0f;
-        if (m_hasCharm && Configs.CharmsAffectBag) m_speedModifier = 0f;
+        m_percentigeDamageModifiers = new();
+        m_addMaxCarryWeight = 0f;
+        m_speedModifier = 0f;
+        m_eitrRegenMultiplier = 1f;
+        m_swimStaminaUseModifier = 0f;
+        m_homeItemStaminaUseModifier = 0f;
+        m_swimSpeedModifier = 0f;
+
+        m_addMaxCarryWeight += baseCarryWeight;
+        if (baseCarryWeight > 0f) m_addMaxCarryWeight += m_quality * m_carryWeightPerQuality;
+        m_speedModifier += movementSpeedModifierCfg?.Value ?? 0f;
+        
+        AddBagAttachmentModifiers();
+    }
+
+    private void AddBagAttachmentModifiers()
+    {
+        m_addMaxCarryWeight += m_currentCharm?.carryWeight ?? 0f;
+        m_speedModifier += m_currentCharm?.speed ?? 0f;
+        if (m_currentCharm != null) m_percentigeDamageModifiers.Add(m_currentCharm.damageModifiers);
+        m_eitrRegenMultiplier += m_currentCharm?.eitrRegen ?? 0f;
+        m_swimSpeedModifier = m_currentBag?.harpoon == null ? 0f : 0.1f;
+        m_homeItemStaminaUseModifier = !HasHomeItem() ? 0f : -0.1f;
+        m_addMaxCarryWeight += m_currentBag?.pickaxe == null ? 0f : 10f;
+        if (m_currentBag?.atgeir != null) m_percentigeDamageModifiers.m_damage += 0.05f;
+        m_swimStaminaUseModifier += m_currentBag?.fishingRod == null ? 0f : -0.1f;
+    }
+
+    private bool HasHomeItem() => m_currentBag?.hammer != null || m_currentBag?.hoe != null ||
+                                  m_currentBag?.cultivator != null || m_currentBag?.scythe != null;
+
+    private Charm? m_currentCharm;
+    private Bag? m_currentBag;
+
+    public void SetBag(Bag? bag)
+    {
+        m_currentBag = bag;
+        m_currentCharm = bag?.lantern?.GetCharmData();
+        SetLevel(m_quality, 0f);
     }
 
     public virtual void ModifyInventoryWeight(Inventory inventory, ref float weight)

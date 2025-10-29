@@ -195,8 +195,16 @@ public static class BagGui
         [UsedImplicitly]
         private static void Postfix(InventoryGui __instance)
         {
-            if (Player.m_localPlayer.IsTeleporting() || __instance.m_currentContainer != null || m_currentBag is not { isOpen: true }) return;
-            m_currentBag.inventory.StackAll(Player.m_localPlayer.GetInventory());
+            if (Player.m_localPlayer.IsTeleporting()) return;
+
+            if (__instance.m_currentContainer != null && m_currentBag != null)
+            {
+                __instance.m_currentContainer.GetInventory().StackAll(m_currentBag.inventory);
+            }
+            else if (m_currentBag is { isOpen: true })
+            {
+                m_currentBag.inventory.StackAll(Player.m_localPlayer.GetInventory());
+            }
         }
     }
     

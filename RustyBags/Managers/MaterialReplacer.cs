@@ -35,8 +35,8 @@ namespace Managers
             OriginalMaterials = new Dictionary<string, Material>();
             ObjectToSwap = new Dictionary<GameObject, bool>();
             ObjectsForShaderReplace = new Dictionary<GameObject, ShaderType>();
-            Harmony harmony = new Harmony("org.bepinex.helpers.PieceManager");
-            harmony.Patch(AccessTools.DeclaredMethod(typeof(ZoneSystem), nameof(ZoneSystem.Start)), postfix: new HarmonyMethod(typeof(MaterialReplacer), nameof(ReplaceAllMaterialsWithOriginal)));
+            // Harmony harmony = new Harmony("org.bepinex.helpers.PieceManager");
+            // harmony.Patch(AccessTools.DeclaredMethod(typeof(ZoneSystem), nameof(ZoneSystem.Start)), postfix: new HarmonyMethod(typeof(MaterialReplacer), nameof(ReplaceAllMaterialsWithOriginal)));
         }
 
         public enum ShaderType
@@ -75,7 +75,7 @@ namespace Managers
         }
 
         [HarmonyPriority(Priority.VeryHigh)]
-        private static void ReplaceAllMaterialsWithOriginal()
+        public static void ReplaceAllMaterialsWithOriginal()
         {
             if (UnityEngine.SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null || hasRun) return;
 

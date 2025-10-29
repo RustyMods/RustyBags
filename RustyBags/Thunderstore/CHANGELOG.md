@@ -1,3 +1,13 @@
+# 1.1.5
+- `stack all` button, when container is open, pulls from player and their bag
+- charms now have unique effects when equipped to bag
+- new charms: dragon tear charm, hare feet charm, valkyrie charm
+- attachments add bonuses
+- default config of `attachment bonuses` is disabled
+- added model replacements to reduce plugin size
+- decimated quiver mesh to reduce size, 26mb --> 5mb
+- dll size from 25.5mb --> 6.4mb
+
 # 1.1.4
 - fixed bag not updating visuals if player dies / destroyed, needed to re-bind delegate
 

@@ -140,9 +140,10 @@
         <Compile Include="src\BagGui.cs" />
         <Compile Include="src\BagInventory.cs" />
         <Compile Include="src\BagEquipment.cs" />
+        <Compile Include="src\ModelReplacer.cs" />
         <Compile Include="src\Quiver.cs" />
         <Compile Include="src\SE_Bag.cs" />
-        <Compile Include="src\Lanterns.cs" />
+        <Compile Include="src\Charms.cs" />
         <Compile Include="Utilities\Dir.cs" />
         <Compile Include="Utilities\Keys.cs" />
         <Compile Include="VersionHandshake.cs"/>

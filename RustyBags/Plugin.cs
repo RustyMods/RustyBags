@@ -18,7 +18,7 @@ namespace RustyBags
     public class RustyBagsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "RustyBags";
-        internal const string ModVersion = "1.1.4";
+        internal const string ModVersion = "1.1.5";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         public static readonly string ConfigFileName = ModGUID + ".cfg";
@@ -142,6 +142,9 @@ namespace RustyBags
             bearSetup.AddSizePerQuality(8, 7, 3);
             bearSetup.AddSizePerQuality(8, 8, 4);
             bearSetup.statusEffect.m_baseCarryWeight = 75f;
+            var bearBagReplacement = new ModelReplacer(bearBag.Prefab);
+            bearBagReplacement.Add("attach/model/bear/default", new ModelReplacer.ReplacementInfo("TrophyBjornUndead", "attach/default"));
+            bearBagReplacement.Add("attach/model/bear/model", new ModelReplacer.ReplacementInfo("UndeadBjornRibcage", "model"));
 
             Item dwarfBag = new Item("bags_bundle", "DvergerBag_RS");
             dwarfBag.Name.English("Dverger Bag");
@@ -168,6 +171,9 @@ namespace RustyBags
             dwarfSetup.AddSizePerQuality(8, 10, 3);
             dwarfSetup.AddSizePerQuality(8, 11, 4);
             dwarfSetup.statusEffect.m_baseCarryWeight = 100f;
+            var dwarfReplacement = new ModelReplacer(dwarfBag.Prefab);
+            dwarfReplacement.Add("attach/model/chest/stonechest", new ModelReplacer.ReplacementInfo("TreasureChest_dvergrtown", "New/stonechest"));
+            dwarfReplacement.Add("attach/model/chest/stonechesttop_closed", new  ModelReplacer.ReplacementInfo("TreasureChest_dvergrtown", "New/stonechesttop_closed"));
 
             var quiver = new Item("bags_bundle", "Quiver_RS");
             quiver.Name.English("Simple Quiver");
@@ -189,6 +195,8 @@ namespace RustyBags
             quiverSetup.statusEffect.m_skillLevel = Skills.SkillType.Bows;
             quiverSetup.statusEffect.m_skillLevelModifier = 10f;
             quiverSetup.statusEffect.m_speedModifier = 0f;
+            var quiverReplacement = new ModelReplacer(quiver.Prefab);
+            quiverReplacement.Add("attach/Quiver/model", new ModelReplacer.ReplacementInfo("DeerHide", "model"));
             
             var mountainQuiver = new Item("bags_bundle", "MountainQuiver_RS");
             mountainQuiver.Name.English("Fur Quiver");
@@ -232,6 +240,8 @@ namespace RustyBags
             crossbowSetup.statusEffect.m_skillLevel = Skills.SkillType.Crossbows;
             crossbowSetup.statusEffect.m_skillLevelModifier = 10f;
             crossbowSetup.statusEffect.m_speedModifier = 0f;
+            var crossbowReplacement = new ModelReplacer(CrossbowQuiver.Prefab);
+            crossbowReplacement.Add("attach/Quiver/default", new ModelReplacer.ReplacementInfo("TrophyGoblinShaman", "attach/default"));
             
             Configs.Setup();
             Keys.Write();

@@ -30,7 +30,7 @@ public static class Configs
         _autoStack = config("1 - General", "Stack Into Bag", Toggle.On, "If on, equipped bag will try to stack items on pickup", false);
         _multipleBags = config("1 - General", "Multiple Bags", Toggle.Off, "If on, player can carry multiple bags");
         _craftFromBag = config("1 - General", "Craft From Bag", Toggle.On, "If on, player can build and craft with equipped bag contents");
-        _charmsAffectBag = config("1 - General", "Charms Remove Movement Speed Debuff", Toggle.Off, "If on, if lantern or charm is equipped to bag, movement speed debuff is removed");
+        _charmsAffectBag = config("1 - General", "Attachment Bonuses", Toggle.Off, "If on, bag attachments affect bag");
         
         foreach(BagSetup? bagSetup in BagSetup.bags.Values) bagSetup.SetupConfigs();
         SetupWatcher();
