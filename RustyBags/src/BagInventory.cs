@@ -11,7 +11,6 @@ public static class InventoryExtensions
 {
     public static bool HasBag(this Inventory inventory) => inventory.m_inventory.FirstOrDefault(x => x is Bag) != null;
     public static bool IsPlayerInventory(this Inventory inventory) => Player.m_localPlayer && inventory == Player.m_localPlayer.GetInventory();
-
     public static bool CheckMultipleBags(this Inventory inventory, ItemDrop.ItemData item)
     {
         if (Configs.MultipleBags || item is not Bag || !inventory.IsPlayerInventory()) return true;

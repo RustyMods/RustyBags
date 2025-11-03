@@ -7,7 +7,7 @@ namespace RustyBags;
 public class Quiver : Bag
 {
     public ItemDrop.ItemData? ammoItem;
-    
+
     public Quiver(ItemDrop.ItemData item) : base(item)
     {
     }
@@ -45,7 +45,7 @@ public class Quiver : Bag
         [UsedImplicitly]
         private static bool Prefix(Humanoid character, ItemDrop.ItemData weapon, ref bool __result)
         {
-            if (character.GetEquippedBag() is not Quiver quiver || quiver.ammoItem == null || weapon.m_shared.m_ammoType != quiver.ammoItem.m_shared.m_ammoType) return true;
+            if (character.GetEquippedQuiver() is not {} quiver || quiver.ammoItem == null || weapon.m_shared.m_ammoType != quiver.ammoItem.m_shared.m_ammoType) return true;
             __result = true;
             return false;
         }
@@ -57,7 +57,7 @@ public class Quiver : Bag
         [UsedImplicitly]
         private static void Postfix(Humanoid character, ItemDrop.ItemData weapon, ref ItemDrop.ItemData? __result)
         {
-            if (__result != null || character.GetEquippedBag() is not Quiver quiver || quiver.ammoItem == null || quiver.ammoItem.m_shared.m_ammoType != weapon.m_shared.m_ammoType) return;
+            if (__result != null || character.GetEquippedQuiver() is not {} quiver || quiver.ammoItem == null || quiver.ammoItem.m_shared.m_ammoType != weapon.m_shared.m_ammoType) return;
             __result = quiver.ammoItem;
         }
     }
@@ -68,7 +68,7 @@ public class Quiver : Bag
         [UsedImplicitly]
         private static bool Prefix(Humanoid character, ItemDrop.ItemData weapon, ref bool __result)
         {
-            if (__result || character.GetEquippedBag() is not Quiver quiver || quiver.ammoItem == null || quiver.ammoItem.m_shared.m_ammoType != weapon.m_shared.m_ammoType) return true;
+            if (__result || character.GetEquippedQuiver() is not {} quiver || quiver.ammoItem == null || quiver.ammoItem.m_shared.m_ammoType != weapon.m_shared.m_ammoType) return true;
             __result = quiver.ammoItem.m_shared.m_itemType != ItemType.Consumable || character.CanConsumeItem(quiver.ammoItem);
             return false;
         }
@@ -81,7 +81,7 @@ public class Quiver : Bag
         private static bool Prefix(Attack __instance, out ItemDrop.ItemData? ammoItem, ref bool __result)
         {
             ammoItem = __instance.m_character.GetAmmoItem();
-            if (ammoItem != null || __instance.m_character.GetEquippedBag() is not Quiver quiver || quiver.ammoItem == null || quiver.ammoItem.m_shared.m_ammoType != __instance.m_weapon.m_shared.m_ammoType) return true;
+            if (ammoItem != null || __instance.m_character.GetEquippedQuiver() is not {} quiver || quiver.ammoItem == null || quiver.ammoItem.m_shared.m_ammoType != __instance.m_weapon.m_shared.m_ammoType) return true;
             
             ammoItem = quiver.ammoItem!;
             __instance.m_ammoItem = ammoItem;

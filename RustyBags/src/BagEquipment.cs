@@ -13,7 +13,9 @@ public class BagEquipment : MonoBehaviour
     public Player m_player = null!;
 
     private Bag? m_currentBagItem;
-    
+    private Quiver? m_currentQuiverItem;
+
+    public string m_quiverItem = "";
     public string m_bagItem = "";
     public string m_lanternItem = "";
     public string m_pickaxeItem = "";
@@ -29,7 +31,8 @@ public class BagEquipment : MonoBehaviour
     public int m_oreStack;
     public string m_scytheItem = "";
     public string m_harpoonItem = "";
-    
+
+    public int m_currentQuiverHash;
     public int m_currentBagHash;
     public int m_currentLanternHash;
     public int m_currentPickaxeHash;
@@ -45,7 +48,8 @@ public class BagEquipment : MonoBehaviour
     public int m_currentOreStack;
     public int m_currentScythHash;
     public int m_currentHarpoonHash;
-    
+
+    public GameObject? m_quiverInstance;
     public GameObject? m_bagInstance;
     private GameObject? m_lanternInstance;
     private GameObject? m_pickaxeInstance;
@@ -61,6 +65,7 @@ public class BagEquipment : MonoBehaviour
     private GameObject? m_harpoonInstance;
 
     public StatusEffect? m_currentEquipStatus;
+    public StatusEffect? m_currentQuiverStatus;
     
     public void Awake()
     {
@@ -70,8 +75,10 @@ public class BagEquipment : MonoBehaviour
     }
 
     private bool IsBagEquipped(Bag bag) => m_currentBagItem == bag;
-    public Bag? GetBag() => m_currentBagItem;
+    private bool IsQuiverEquipped(Quiver quiver) => m_currentQuiverItem == quiver;
 
+    public Bag? GetBag() => m_currentBagItem;
+    public Quiver? GetQuiver() => m_currentQuiverItem;
     private bool SetBag(Bag? bag)
     {
         if (m_currentBagItem == bag) return false;
@@ -84,28 +91,68 @@ public class BagEquipment : MonoBehaviour
         
         SetBagItem(m_currentBagItem?.m_dropPrefab.name ?? "");
 
-        if (m_currentBagItem is Quiver quiver)
-        {
-            SetArrowItem(quiver.ammoItem?.m_dropPrefab.name ?? "", quiver.ammoItem?.m_stack ?? 0);
-        }
-        else
-        {
-            SetLanternItem(m_currentBagItem?.lantern?.m_dropPrefab.name ?? "");
-            SetPickaxeItem(m_currentBagItem?.pickaxe?.m_dropPrefab.name ?? "");
-            SetFishingRodItem(m_currentBagItem?.fishingRod?.m_dropPrefab.name ?? "");
-            SetCultivatorItem(m_currentBagItem?.cultivator?.m_dropPrefab.name ?? "");
-            SetHammerItem(m_currentBagItem?.hammer?.m_dropPrefab.name ?? "");
-            SetMeleeItem(m_currentBagItem?.melee?.m_dropPrefab.name ?? "");
-            SetHoeItem(m_currentBagItem?.hoe?.m_dropPrefab.name ?? "");
-            SetAtgeirItem(m_currentBagItem?.atgeir?.m_dropPrefab.name ?? "");
-            SetOreItem(m_currentBagItem?.ore?.m_dropPrefab.name ?? "", m_currentBagItem?.ore?.m_stack ?? 0);
-            SetScytheItem(m_currentBagItem?.scythe?.m_dropPrefab.name ?? "");
-            SetHarpoonItem(m_currentBagItem?.harpoon?.m_dropPrefab.name ?? "");
-            SetArrowItem("", 0);
-        }
+        // if (m_currentBagItem is Quiver quiver)
+        // {
+        //     SetArrowItem(quiver.ammoItem?.m_dropPrefab.name ?? "", quiver.ammoItem?.m_stack ?? 0);
+        // }
+        // else
+        // {
+        //     SetLanternItem(m_currentBagItem?.lantern?.m_dropPrefab.name ?? "");
+        //     SetPickaxeItem(m_currentBagItem?.pickaxe?.m_dropPrefab.name ?? "");
+        //     SetFishingRodItem(m_currentBagItem?.fishingRod?.m_dropPrefab.name ?? "");
+        //     SetCultivatorItem(m_currentBagItem?.cultivator?.m_dropPrefab.name ?? "");
+        //     SetHammerItem(m_currentBagItem?.hammer?.m_dropPrefab.name ?? "");
+        //     SetMeleeItem(m_currentBagItem?.melee?.m_dropPrefab.name ?? "");
+        //     SetHoeItem(m_currentBagItem?.hoe?.m_dropPrefab.name ?? "");
+        //     SetAtgeirItem(m_currentBagItem?.atgeir?.m_dropPrefab.name ?? "");
+        //     SetOreItem(m_currentBagItem?.ore?.m_dropPrefab.name ?? "", m_currentBagItem?.ore?.m_stack ?? 0);
+        //     SetScytheItem(m_currentBagItem?.scythe?.m_dropPrefab.name ?? "");
+        //     SetHarpoonItem(m_currentBagItem?.harpoon?.m_dropPrefab.name ?? "");
+        //     SetArrowItem("", 0);
+        // }
+        
+        SetLanternItem(m_currentBagItem?.lantern?.m_dropPrefab.name ?? "");
+        SetPickaxeItem(m_currentBagItem?.pickaxe?.m_dropPrefab.name ?? "");
+        SetFishingRodItem(m_currentBagItem?.fishingRod?.m_dropPrefab.name ?? "");
+        SetCultivatorItem(m_currentBagItem?.cultivator?.m_dropPrefab.name ?? "");
+        SetHammerItem(m_currentBagItem?.hammer?.m_dropPrefab.name ?? "");
+        SetMeleeItem(m_currentBagItem?.melee?.m_dropPrefab.name ?? "");
+        SetHoeItem(m_currentBagItem?.hoe?.m_dropPrefab.name ?? "");
+        SetAtgeirItem(m_currentBagItem?.atgeir?.m_dropPrefab.name ?? "");
+        SetOreItem(m_currentBagItem?.ore?.m_dropPrefab.name ?? "", m_currentBagItem?.ore?.m_stack ?? 0);
+        SetScytheItem(m_currentBagItem?.scythe?.m_dropPrefab.name ?? "");
+        SetHarpoonItem(m_currentBagItem?.harpoon?.m_dropPrefab.name ?? "");
 
         SetupEquipStatusEffect(oldSE, newSE, m_currentBagItem?.m_quality ?? 1, m_currentBagItem?.lantern?.GetCharmData());
         return true;
+    }
+
+    public bool SetQuiver(Quiver? quiver)
+    {
+        if (m_currentQuiverItem == quiver) return false;
+        m_currentQuiverItem?.OnUnequip();
+        StatusEffect? oldSE = m_currentQuiverItem?.m_shared.m_equipStatusEffect;
+        StatusEffect? newSE = quiver?.m_shared.m_equipStatusEffect;
+        m_currentQuiverItem = quiver;
+        m_currentQuiverItem?.OnEquip(this);
+        SetQuiverItem(m_currentQuiverItem?.m_dropPrefab.name ?? "");
+        SetArrowItem(m_currentQuiverItem?.ammoItem?.m_dropPrefab.name ?? "",  m_currentQuiverItem?.ammoItem?.m_stack ?? 0);
+        SetupQuiverStatusEffect(oldSE,newSE, m_currentQuiverItem?.m_quality ?? 1);
+        return true;
+    }
+
+    public void SetupQuiverStatusEffect(StatusEffect? old, StatusEffect? se, int quality)
+    {
+        if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
+        if (old != null)
+        {
+            m_player.GetSEMan()?.RemoveStatusEffect(old.NameHash());
+            m_currentQuiverStatus = null;
+        }
+        if (se != null)
+        {
+            m_currentQuiverStatus = m_player.GetSEMan()?.AddStatusEffect(se.NameHash(), false, quality);
+        }
     }
 
     public void SetupEquipStatusEffect(StatusEffect? old, StatusEffect? se, int quality, Charm? charm)
@@ -175,6 +222,14 @@ public class BagEquipment : MonoBehaviour
         int hoeHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
         if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
         m_nview.GetZDO().Set(BagVars.Hoe, hoeHash);
+    }
+
+    public void SetQuiverItem(string item)
+    {
+        m_quiverItem = item;
+        if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
+        int quiverHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
+        m_nview.GetZDO().Set(BagVars.Quiver, quiverHash);
     }
 
     public void SetArrowItem(string item, int stack)
@@ -256,7 +311,7 @@ public class BagEquipment : MonoBehaviour
         m_atgeirInstance = null;
         m_hoeInstance = null;
         m_cultivatorInstance = null;
-        m_arrowInstances.Clear();
+        // m_arrowInstances.Clear();
         m_hammerInstance = null;
         m_fishingRodInstance = null;
         m_oreInstances.Clear();
@@ -274,8 +329,8 @@ public class BagEquipment : MonoBehaviour
         m_currentMeleeHash = 0;
         m_currentHoeHash = 0;
         m_currentAtgeirHash = 0;
-        m_currentArrowHash = 0;
-        m_currentArrowStack = 0;
+        // m_currentArrowHash = 0;
+        // m_currentArrowStack = 0;
         m_currentOreHash = 0;
         m_currentOreStack = 0;
         m_currentScythHash = 0;
@@ -294,6 +349,21 @@ public class BagEquipment : MonoBehaviour
         ResetAttachHashes();
         if (hash == 0) return;
         m_bagInstance = m_visEquipment.AttachItem(hash, 0, m_visEquipment.m_backShield);
+    }
+
+    public void SetQuiverEquipped(int hash)
+    {
+        if (m_currentQuiverHash == hash) return;
+        if (m_quiverInstance != null)
+        {
+            Destroy(m_quiverInstance);
+            m_arrowInstances.Clear();
+        }
+        m_currentArrowHash = 0;
+        m_currentArrowStack = 0;
+        m_currentQuiverHash = hash;
+        if (hash == 0) return;
+        m_quiverInstance = m_visEquipment.AttachItem(hash, 0, m_visEquipment.m_backShield);
     }
 
     public void SetHammerEquipped(int hash)
@@ -418,7 +488,7 @@ public class BagEquipment : MonoBehaviour
 
     public void SetArrowEquipped(int hash, int stack)
     {
-        if ((m_currentArrowHash == hash && m_currentArrowStack == stack) || m_bagInstance == null) return;
+        if ((m_currentArrowHash == hash && m_currentArrowStack == stack) || m_quiverInstance == null) return;
 
         bool hashChanged = m_currentArrowHash != hash;
         int previousStack = m_currentArrowStack;
@@ -426,7 +496,7 @@ public class BagEquipment : MonoBehaviour
         m_currentArrowHash = hash;
         m_currentArrowStack = stack;
 
-        if (hash == 0 || m_bagInstance.transform.Find("attach_arrows") is not { } arrows)
+        if (hash == 0 || m_quiverInstance.transform.Find("attach_arrows") is not { } arrows)
         {
             ClearArrowInstances();
             return;
@@ -487,7 +557,7 @@ public class BagEquipment : MonoBehaviour
         }
     }
 
-    public static void CleanUpArrow(GameObject go)
+    private static void CleanUpArrow(GameObject go)
     {
         if (go.GetComponentInChildren<Light>() is { } light) light.enabled = false;
         if (go.GetComponentInChildren<ParticleSystem>() is {} ps) ps.Stop();
@@ -571,6 +641,7 @@ public class BagEquipment : MonoBehaviour
     {
         ZDO? zdo = m_nview.GetZDO();
         int bagHash = zdo?.GetInt(BagVars.Bag) ?? (string.IsNullOrEmpty(m_bagItem) ? 0 : m_bagItem.GetStableHashCode());
+        int quiverHash = zdo?.GetInt(BagVars.Quiver) ?? (string.IsNullOrEmpty(m_quiverItem) ? 0 : m_quiverItem.GetStableHashCode());
         int lanternHash = zdo?.GetInt(BagVars.Lantern) ?? (string.IsNullOrEmpty(m_lanternItem) ? 0 : m_lanternItem.GetStableHashCode());
         int pickaxeHash = zdo?.GetInt(BagVars.Pickaxe) ?? (string.IsNullOrEmpty(m_pickaxeItem) ? 0 : m_pickaxeItem.GetStableHashCode());
         int arrowHash = zdo?.GetInt(BagVars.Arrow) ?? (string.IsNullOrEmpty(m_arrowItem) ? 0 :  m_arrowItem.GetStableHashCode());
@@ -587,6 +658,7 @@ public class BagEquipment : MonoBehaviour
         int harpoonHash = zdo?.GetInt(BagVars.Harpoon) ?? (string.IsNullOrEmpty(m_harpoonItem) ? 0 : m_harpoonItem.GetStableHashCode());
         
         SetBagEquipped(bagHash);
+        SetQuiverEquipped(quiverHash);
         SetLanternEquipped(lanternHash);
         SetPickaxeEquipped(pickaxeHash);
         SetArrowEquipped(arrowHash, arrowStack);
@@ -629,7 +701,14 @@ public class BagEquipment : MonoBehaviour
         private static void Postfix(Humanoid __instance, ItemDrop.ItemData item, ref bool __result)
         {
             if (!__instance.TryGetComponent(out BagEquipment component) || item is not Bag bag) return;
-            __result = component.IsBagEquipped(bag);
+            if (item is Quiver quiver)
+            {
+                __result = component.IsQuiverEquipped(quiver);
+            }
+            else
+            {
+                __result = component.IsBagEquipped(bag);
+            }
         }
     }
     
@@ -646,8 +725,16 @@ public class BagEquipment : MonoBehaviour
                 __result = false;
                 return false;
             }
+
+            if (item is Quiver quiver)
+            {
+                __result = component.SetQuiver(quiver);
+            }
+            else
+            {
+                __result = component.SetBag(bag);
+            }
             
-            __result = component.SetBag(bag);
             if (triggerEquipEffects) __instance.TriggerEquipEffect(item);
             return false;
         }
@@ -660,8 +747,16 @@ public class BagEquipment : MonoBehaviour
         private static bool Prefix(Humanoid __instance, ItemDrop.ItemData item, bool triggerEquipEffects)
         {
             if (!__instance.TryGetComponent(out BagEquipment component) || item is not Bag bag) return true;
-            if (!component.IsBagEquipped(bag)) return false;
-            component.SetBag(null);
+            if (item is Quiver quiver)
+            {
+                if (!component.IsQuiverEquipped(quiver)) return false;
+                component.SetQuiver(null);
+            }
+            else
+            {
+                if (!component.IsBagEquipped(bag)) return false;
+                component.SetBag(null);
+            }
             if (triggerEquipEffects) __instance.TriggerEquipEffect(item);
             return false;
         }
@@ -675,6 +770,7 @@ public class BagEquipment : MonoBehaviour
         {
             if (!__instance.TryGetComponent(out BagEquipment component)) return;
             component.SetBag(null);
+            component.SetQuiver(null);
         }
     }
 
@@ -696,6 +792,7 @@ public class BagEquipment : MonoBehaviour
 
 public static class BagVars
 {
+    public static readonly int Quiver = "ExtraSlot.Quiver".GetStableHashCode();
     public static readonly int Bag = "ExtraSlot.Bag".GetStableHashCode();
     public static readonly int Lantern = "ExtraSlot.Bag.Lantern".GetStableHashCode();
     public static readonly int Pickaxe = "ExtraSlot.Bag.Pickaxe".GetStableHashCode();

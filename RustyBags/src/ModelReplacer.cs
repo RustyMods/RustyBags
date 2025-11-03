@@ -9,9 +9,9 @@ namespace RustyBags;
 public class ModelReplacer
 {
     public static ZNetScene? _scene;
-    public static List<ModelReplacer> replacers = new();
-    public GameObject Prefab;
-    public Dictionary<string, ReplacementInfo> replacements = new();
+    public static readonly List<ModelReplacer> replacers = new();
+    public readonly GameObject Prefab;
+    public readonly Dictionary<string, ReplacementInfo> replacements = new();
 
     public ModelReplacer(GameObject prefab)
     {
@@ -46,14 +46,13 @@ public class ModelReplacer
             targetFilter.sharedMesh = filter.sharedMesh;
             targetRenderer.sharedMaterials = renderer.sharedMaterials;
             targetRenderer.materials = renderer.materials;
-            Debug.LogWarning($"Successfully replaced {Prefab.name}/{replacement.Key}");
         }
     }
 
     public class ReplacementInfo
     {
-        public string source;
-        public string target;
+        public readonly string source;
+        public readonly string target;
 
         public ReplacementInfo(string source, string target)
         {

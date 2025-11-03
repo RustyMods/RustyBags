@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Reflection;
 using BepInEx;
+using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
 using ItemManager;
@@ -8,6 +9,7 @@ using RustyBags.Managers;
 using RustyBags.Utilities;
 using ServerSync;
 using UnityEngine;
+using Toggle = RustyBags.Managers.Toggle;
 
 namespace RustyBags
 {
@@ -18,10 +20,10 @@ namespace RustyBags
     public class RustyBagsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "RustyBags";
-        internal const string ModVersion = "1.1.5";
+        internal const string ModVersion = "1.1.6";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
-        public static readonly string ConfigFileName = ModGUID + ".cfg";
+        public const string ConfigFileName = ModGUID + ".cfg";
         public static readonly string ConfigFileFullPath = Paths.ConfigPath + Path.DirectorySeparatorChar + ConfigFileName;
         internal static string ConnectionError = "";
         private readonly Harmony _harmony = new(ModGUID);
@@ -38,7 +40,6 @@ namespace RustyBags
             DontDestroyOnLoad(root);
             root.SetActive(false);
             
-
             Item.DefaultConfigurability = Configurability.Recipe;
             
             Item leatherBag = new Item("bags_bundle", "LeatherBag_RS");
@@ -246,23 +247,66 @@ namespace RustyBags
             Configs.Setup();
             Keys.Write();
             Localizer.Load();
-
-            if (AzuExtendedPlayerInventory.API.IsLoaded())
-            {
-                string? localized = Localization.instance.Localize(Keys.Bag);
-                AzuExtendedPlayerInventory.API.AddSlot(localized, player => player.GetEquippedBag(),
-                    item =>
-                    {
-                        if (item is not Bag) return false;
-                        if (Configs.MultipleBags) return true;
-                        return !(Player.m_localPlayer?.HasBag() ?? false);
-                    });
-            }
-            
+            SetupEPI();
             BagCraft.Init();
             
             Assembly assembly = Assembly.GetExecutingAssembly();
             _harmony.PatchAll(assembly);
+        }
+
+        public void SetupEPI()
+        {
+            if (!AzuExtendedPlayerInventory.API.IsLoaded()) return;
+            ConfigEntry<Toggle> addBagSlotConfig = Configs.config("2 - Extended Player Inventory", "Add Bag Slot", Toggle.On, "If on, will add bag slot to EPI");
+            string? bagLabel = Localization.instance.Localize(Keys.Bag);
+
+            OnBagSlotConfigChange();
+            addBagSlotConfig.SettingChanged += (_, _) =>
+            {
+                OnBagSlotConfigChange();
+            };
+            ConfigEntry<Toggle> addQuiverSlotConfig = Configs.config("2 - Extended Player Inventory", "Add Quiver Slot", Toggle.On,
+                "If on, will add quiver slot to EPI");
+                
+            string? quiverLabel = Localization.instance.Localize(Keys.Quiver);
+
+            OnQuiverSlotConfigChange();
+            addQuiverSlotConfig.SettingChanged += (_, _) =>
+            {
+                OnQuiverSlotConfigChange();
+            };
+            return;
+
+            void OnQuiverSlotConfigChange()
+            {
+                AzuExtendedPlayerInventory.API.RemoveSlot(quiverLabel);
+                if (addQuiverSlotConfig.Value is Toggle.On)
+                {
+                    AzuExtendedPlayerInventory.API.AddSlot(quiverLabel, player => player.GetEquippedQuiver(),
+                        item =>
+                        {
+                            if (item is not Quiver) return false;
+                            if (Configs.MultipleBags) return true;
+                            return !(Player.m_localPlayer?.HasBag() ?? false);
+                        });
+                }
+            }
+
+            void OnBagSlotConfigChange()
+            {
+                AzuExtendedPlayerInventory.API.RemoveSlot(bagLabel);
+                if (addBagSlotConfig.Value is Toggle.On)
+                {
+                    AzuExtendedPlayerInventory.API.AddSlot(bagLabel, player => player.GetEquippedBag(),
+                        item =>
+                        {
+                            if (item is not Bag) return false;
+                            if (item is Quiver) return false;
+                            if (Configs.MultipleBags) return true;
+                            return !(Player.m_localPlayer?.HasBag() ?? false);
+                        });
+                }
+            }
         }
         
         private void OnDestroy()

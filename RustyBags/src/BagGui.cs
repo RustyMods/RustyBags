@@ -27,7 +27,10 @@ public static class BagGui
     {
         [UsedImplicitly]
         // make sure new local player reset current bag state
-        private static void Postfix() => m_currentBag = null;
+        private static void Postfix()
+        {
+            m_currentBag = null;
+        }
     }
     
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.OnSelectedItem))]
@@ -142,28 +145,49 @@ public static class BagGui
         [HarmonyPriority(Priority.Last)]
         private static bool Prefix(InventoryGui __instance, Player player)
         {
-            if (!__instance.m_animator.GetBool(visible)) return true;
-            if (__instance.m_currentContainer != null || m_currentBag == null) return true;
+            if (!__instance.m_animator.GetBool(visible) || __instance.m_currentContainer != null || m_currentBag == null) return true;
             
-            if (!AutoOpen || __instance.IsStackAllButtonHidden())
-            {
-                Vector2i pos = new Vector2i(Mathf.RoundToInt(ZInput.mousePosition.x), Mathf.RoundToInt(ZInput.mousePosition.y));
-                ItemDrop.ItemData? item = __instance.m_playerGrid.GetItem(pos);
+            // if (!AutoOpen || __instance.IsStackAllButtonHidden())
+            // {
+            //     Vector2i pos = new Vector2i(Mathf.RoundToInt(ZInput.mousePosition.x), Mathf.RoundToInt(ZInput.mousePosition.y));
+            //     ItemDrop.ItemData? item = __instance.m_playerGrid.GetItem(pos);
+            //
+            //     if (item is not Bag && (ZInput.GetButton("Use") || ZInput.GetButton("JoyUse")))
+            //     {
+            //         // if jewel bag or other items that use interact button, is interacted with, close bag.
+            //         m_currentBag.Close();
+            //     }
+            //     else if (item == m_currentBag)
+            //     {
+            //         m_currentBag.Open();
+            //     }
+            //     
+            //     if (!m_currentBag.isOpen) return true;
+            // }
+            
+            if (AutoOpen && !__instance.IsStackAllButtonHidden()) m_currentBag.Open();
+            
+            Vector2i pos = new Vector2i(Mathf.RoundToInt(ZInput.mousePosition.x), Mathf.RoundToInt(ZInput.mousePosition.y));
+            ItemDrop.ItemData? item = __instance.m_playerGrid.GetItem(pos);
 
-                if (item is not Bag && (ZInput.GetButton("Use") || ZInput.GetButton("JoyUse")))
-                {
-                    // if jewel bag or other items that use interact button, is interacted with, close bag.
-                    m_currentBag.Close();
-                }
-                else if (item == m_currentBag)
-                {
-                    m_currentBag.Open();
-                }
-                
-                if (!m_currentBag.isOpen) return true;
+            if (item is not Bag && (ZInput.GetButton("Use") || ZInput.GetButton("JoyUse")))
+            {
+                m_currentBag.Close();
             }
+            else if (item is Bag bag && m_currentBag != bag)
+            {
+                m_currentBag.Close();
+                m_currentBag = bag;
+                m_currentBag.Open();
+            }
+            else if (item == m_currentBag)
+            {
+                m_currentBag.Open();
+            }
+                
+            if (!m_currentBag.isOpen) return true;
             
-            m_currentBag.isOpen = true;
+            // m_currentBag.isOpen = true;
             
             __instance.m_container.gameObject.SetActive(true);
             __instance.m_stackAllButton.gameObject.SetActive(true);
@@ -243,10 +267,9 @@ public static class BagGui
     {
         MethodInfo? target = AccessTools.Method(typeof(Inventory), nameof(Inventory.GetWornItems));
         MethodInfo? method = AccessTools.Method(typeof(BagGui), nameof(GetBagWornItems));
-        CodeInstruction[] newInstructions = new[]
-        {
-            new CodeInstruction(OpCodes.Ldarg_0),
-            new CodeInstruction(OpCodes.Call, method)
+        CodeInstruction[] newInstructions = {
+            new (OpCodes.Ldarg_0),
+            new (OpCodes.Call, method)
         };
 
         return new CodeMatcher(instructions)

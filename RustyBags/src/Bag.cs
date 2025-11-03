@@ -10,7 +10,6 @@ using ItemManager;
 using JetBrains.Annotations;
 using Managers;
 using RustyBags.Managers;
-using RustyBags.Utilities;
 using UnityEngine;
 
 namespace RustyBags;
@@ -22,11 +21,14 @@ public static class BagExtensions
     public static bool IsBound(this ItemDrop.ItemData item) => item.m_gridPos.y == 0;
     public static Bag? GetEquippedBag(this Humanoid humanoid)
     {
-        foreach (ItemDrop.ItemData? item in humanoid.GetInventory().GetAllItems())
-        {
-            if (item is Bag { m_equipped: true } bag) return bag;
-        }
-        return null;
+        return !humanoid.TryGetComponent(out BagEquipment component)
+            ? null
+            : component.GetBag() ?? component.GetQuiver();
+    }
+
+    public static Quiver? GetEquippedQuiver(this Humanoid humanoid)
+    {
+        return !humanoid.TryGetComponent(out BagEquipment component) ? null : component.GetQuiver();
     }
 
     public static Bag? GetAnyBag(this Humanoid humanoid)
@@ -228,7 +230,7 @@ public class Bag : ItemDrop.ItemData
         m_equipped = false;
         UpdateWeight();
         SaveInventory();
-        m_bagEquipment = null;
+        // m_bagEquipment = null;
         if (BagGui.m_currentBag != this) return;
         BagGui.m_currentBag = null;
     }
@@ -361,7 +363,7 @@ public class Bag : ItemDrop.ItemData
     
     public BagSetup GetSetup() => BagSetup.bags[m_shared.m_name];
 
-    private void UpdateWeight()
+    public void UpdateWeight()
     {
         m_shared.m_weight = baseWeight + GetInventoryWeight();
         m_bagEquipment?.m_player.GetInventory().UpdateTotalWeight();

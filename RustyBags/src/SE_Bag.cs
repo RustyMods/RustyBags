@@ -148,5 +148,4 @@ public class SE_OreBag : SE_Bag
             sb.AppendFormat("{0}: <color=orange>{1:+0;-0}%</color>\n", Keys.OreWeight, (inventoryWeightModifier - 1f) * 100);
         }
     }
-    
 }

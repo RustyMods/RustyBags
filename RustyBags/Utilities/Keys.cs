@@ -34,8 +34,8 @@ public static class Keys
     public static readonly string Only = new Key("$msg_only", "Only").key;
     public static readonly string Allowed = new Key("$msg_allowed", "allowed").key;
     public static readonly string OreWeight = new Key("$se_oreweight", "Ore Weight").key;
-    public static readonly string Bag = new Keys.Key("$label_bag", "Bag").key;
-    public static readonly string SECharm = new Key("$se_charm", "No bag speed penalty").key;
+    public static readonly string Bag = new Key("$label_bag", "Bag").key;
+    public static readonly string Quiver = new Key("$label_quiver", "Quiver").key;
     public static readonly string IfEquippedToBag = new Key("$se_charm_equipped", "If equipped to bag").key;
     
     public const string Blunt = "$inventory_blunt";

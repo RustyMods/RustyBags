@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 using HarmonyLib;
 using ItemManager;
@@ -81,7 +80,7 @@ public static class Charms
             CharredLantern.RequiredItems.Add("Resin", 10);
             CharredLantern.Configurable = Configurability.Disabled;
             var charredCharm = new Charm($"${CharredLantern.Name.Key}");
-            charredCharm.damageModifiers.m_damage = 0.1f;
+            charredCharm.damageModifiers.m_slash = 0.1f;
         }
         
         Item? GhostLantern = CreateCharm(scene, source, "TrophyGhost", "default", "GhostLantern_RS", new Vector3(0f, -0.083f, 0.023f));
@@ -216,6 +215,11 @@ public class Charm
             sb.AppendFormat("{0}: <color=orange>{1:+0;-0}%</color>\n", "$se_eitrregen", eitrRegen * 100f);
         }
 
+        if (damageModifiers.m_damage != 0.0)
+        {
+            sb.AppendFormat("{0}: <color=orange>{1:+0;-0}%</color>\n", "$inventory_damage", damageModifiers.m_damage * 100f);
+        }
+        
         if (damageModifiers.m_blunt != 0.0)
         {
             sb.AppendFormat("{0}: <color=orange>{1:+0;-0}%</color>\n", "$inventory_blunt", damageModifiers.m_blunt * 100f);

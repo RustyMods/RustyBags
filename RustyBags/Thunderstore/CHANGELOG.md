@@ -1,3 +1,10 @@
+# 1.1.6
+- removed warning logs when successfully replaced models (was a dev log)
+- made it possible to equip both quiver and a bag
+- modified charred charm to slash dmg
+- added quiver slot to EPI
+- added config to on/off bag and quiver slot from EPI
+
 # 1.1.5
 - `stack all` button, when container is open, pulls from player and their bag
 - charms now have unique effects when equipped to bag
