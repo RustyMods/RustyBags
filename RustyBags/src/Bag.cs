@@ -230,7 +230,6 @@ public class Bag : ItemDrop.ItemData
         m_equipped = false;
         UpdateWeight();
         SaveInventory();
-        // m_bagEquipment = null;
         if (BagGui.m_currentBag != this) return;
         BagGui.m_currentBag = null;
     }

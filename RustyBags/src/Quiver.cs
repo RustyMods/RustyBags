@@ -36,7 +36,15 @@ public class Quiver : Bag
                 item.m_equipped = false;
             }
         }
-        m_bagEquipment?.SetArrowItem(ammoItem?.m_dropPrefab.name ?? "", ammoItem?.m_stack ?? 0);
+
+        if (ammoItem?.m_shared.m_ammoType == "$ammo_bolts")
+        {
+            m_bagEquipment?.SetArrowItem(ammoItem?.m_dropPrefab.name ?? "", ammoItem?.m_stack ?? 0, true);
+        }
+        else
+        {
+            m_bagEquipment?.SetArrowItem(ammoItem?.m_dropPrefab.name ?? "", ammoItem?.m_stack ?? 0);
+        }
     }
 
     [HarmonyPatch(typeof(Attack), nameof(Attack.EquipAmmoItem))]
@@ -81,7 +89,30 @@ public class Quiver : Bag
         private static bool Prefix(Attack __instance, out ItemDrop.ItemData? ammoItem, ref bool __result)
         {
             ammoItem = __instance.m_character.GetAmmoItem();
-            if (ammoItem != null || __instance.m_character.GetEquippedQuiver() is not {} quiver || quiver.ammoItem == null || quiver.ammoItem.m_shared.m_ammoType != __instance.m_weapon.m_shared.m_ammoType) return true;
+            // if (ammoItem != null || __instance.m_character.GetEquippedQuiver() is not {} quiver || quiver.ammoItem == null || quiver.ammoItem.m_shared.m_ammoType != __instance.m_weapon.m_shared.m_ammoType) return true;
+            if (ammoItem?.m_shared.m_ammoType != __instance.m_weapon.m_shared.m_ammoType)
+            {
+                ammoItem = null;
+            }
+            if (ammoItem != null) return true;
+            
+            if (__instance.m_character.GetEquippedQuiver() is not {} quiver)
+            {
+                // RustyBagsPlugin.RustyBagsLogger.LogDebug("No quiver equipped");
+                return true;
+            }
+
+            if (quiver.ammoItem == null)
+            {
+                // RustyBagsPlugin.RustyBagsLogger.LogDebug($"{quiver.m_shared.m_name} has no ammer");
+                return true;
+            }
+
+            if (quiver.ammoItem.m_shared.m_ammoType != __instance.m_weapon.m_shared.m_ammoType)
+            {
+                // RustyBagsPlugin.RustyBagsLogger.LogDebug($"{quiver.ammoItem.m_shared.m_name} wrong ammo type");
+                return true;
+            }
             
             ammoItem = quiver.ammoItem!;
             __instance.m_ammoItem = ammoItem;

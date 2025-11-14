@@ -21,6 +21,7 @@ public class BagEquipment : MonoBehaviour
     public string m_pickaxeItem = "";
     public string m_arrowItem = "";
     public int m_arrowStack;
+    public bool m_requireCentering;
     public string m_fishingRodItem = "";
     public string m_cultivatorItem = "";
     public string m_hammerItem = "";
@@ -90,26 +91,6 @@ public class BagEquipment : MonoBehaviour
         m_currentBagItem?.OnEquip(this);
         
         SetBagItem(m_currentBagItem?.m_dropPrefab.name ?? "");
-
-        // if (m_currentBagItem is Quiver quiver)
-        // {
-        //     SetArrowItem(quiver.ammoItem?.m_dropPrefab.name ?? "", quiver.ammoItem?.m_stack ?? 0);
-        // }
-        // else
-        // {
-        //     SetLanternItem(m_currentBagItem?.lantern?.m_dropPrefab.name ?? "");
-        //     SetPickaxeItem(m_currentBagItem?.pickaxe?.m_dropPrefab.name ?? "");
-        //     SetFishingRodItem(m_currentBagItem?.fishingRod?.m_dropPrefab.name ?? "");
-        //     SetCultivatorItem(m_currentBagItem?.cultivator?.m_dropPrefab.name ?? "");
-        //     SetHammerItem(m_currentBagItem?.hammer?.m_dropPrefab.name ?? "");
-        //     SetMeleeItem(m_currentBagItem?.melee?.m_dropPrefab.name ?? "");
-        //     SetHoeItem(m_currentBagItem?.hoe?.m_dropPrefab.name ?? "");
-        //     SetAtgeirItem(m_currentBagItem?.atgeir?.m_dropPrefab.name ?? "");
-        //     SetOreItem(m_currentBagItem?.ore?.m_dropPrefab.name ?? "", m_currentBagItem?.ore?.m_stack ?? 0);
-        //     SetScytheItem(m_currentBagItem?.scythe?.m_dropPrefab.name ?? "");
-        //     SetHarpoonItem(m_currentBagItem?.harpoon?.m_dropPrefab.name ?? "");
-        //     SetArrowItem("", 0);
-        // }
         
         SetLanternItem(m_currentBagItem?.lantern?.m_dropPrefab.name ?? "");
         SetPickaxeItem(m_currentBagItem?.pickaxe?.m_dropPrefab.name ?? "");
@@ -136,7 +117,15 @@ public class BagEquipment : MonoBehaviour
         m_currentQuiverItem = quiver;
         m_currentQuiverItem?.OnEquip(this);
         SetQuiverItem(m_currentQuiverItem?.m_dropPrefab.name ?? "");
-        SetArrowItem(m_currentQuiverItem?.ammoItem?.m_dropPrefab.name ?? "",  m_currentQuiverItem?.ammoItem?.m_stack ?? 0);
+
+        if (m_currentQuiverItem?.ammoItem?.m_shared.m_ammoType == "$ammo_bolts")
+        {
+            SetArrowItem(m_currentQuiverItem?.ammoItem?.m_dropPrefab.name ?? "",  m_currentQuiverItem?.ammoItem?.m_stack ?? 0, true);
+        }
+        else
+        {
+            SetArrowItem(m_currentQuiverItem?.ammoItem?.m_dropPrefab.name ?? "",  m_currentQuiverItem?.ammoItem?.m_stack ?? 0);
+        }
         SetupQuiverStatusEffect(oldSE,newSE, m_currentQuiverItem?.m_quality ?? 1);
         return true;
     }
@@ -232,14 +221,16 @@ public class BagEquipment : MonoBehaviour
         m_nview.GetZDO().Set(BagVars.Quiver, quiverHash);
     }
 
-    public void SetArrowItem(string item, int stack)
+    public void SetArrowItem(string item, int stack, bool requireCentering = false)
     {
         m_arrowItem = item;
         m_arrowStack = stack;
+        m_requireCentering = requireCentering;
         if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
         int arrowHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
         m_nview.GetZDO().Set(BagVars.Arrow, arrowHash);
         m_nview.GetZDO().Set(BagVars.ArrowStack, stack);
+        m_nview.GetZDO().Set(BagVars.AutoCenter, requireCentering);
     }
 
     public void SetBagItem(string item)
@@ -311,7 +302,6 @@ public class BagEquipment : MonoBehaviour
         m_atgeirInstance = null;
         m_hoeInstance = null;
         m_cultivatorInstance = null;
-        // m_arrowInstances.Clear();
         m_hammerInstance = null;
         m_fishingRodInstance = null;
         m_oreInstances.Clear();
@@ -329,8 +319,6 @@ public class BagEquipment : MonoBehaviour
         m_currentMeleeHash = 0;
         m_currentHoeHash = 0;
         m_currentAtgeirHash = 0;
-        // m_currentArrowHash = 0;
-        // m_currentArrowStack = 0;
         m_currentOreHash = 0;
         m_currentOreStack = 0;
         m_currentScythHash = 0;
@@ -349,6 +337,7 @@ public class BagEquipment : MonoBehaviour
         ResetAttachHashes();
         if (hash == 0) return;
         m_bagInstance = m_visEquipment.AttachItem(hash, 0, m_visEquipment.m_backShield);
+        if (m_bagInstance.transform.Find("hide") is {} hideOnEquip) hideOnEquip.gameObject.SetActive(false);
     }
 
     public void SetQuiverEquipped(int hash)
@@ -364,6 +353,7 @@ public class BagEquipment : MonoBehaviour
         m_currentQuiverHash = hash;
         if (hash == 0) return;
         m_quiverInstance = m_visEquipment.AttachItem(hash, 0, m_visEquipment.m_backShield);
+        if (m_quiverInstance.transform.Find("hide") is {} hideOnEquip) hideOnEquip.gameObject.SetActive(false);
     }
 
     public void SetHammerEquipped(int hash)
@@ -486,7 +476,7 @@ public class BagEquipment : MonoBehaviour
         m_oreInstances.Clear();
     }
 
-    public void SetArrowEquipped(int hash, int stack)
+    public void SetArrowEquipped(int hash, int stack, bool requireCentering)
     {
         if ((m_currentArrowHash == hash && m_currentArrowStack == stack) || m_quiverInstance == null) return;
 
@@ -521,15 +511,20 @@ public class BagEquipment : MonoBehaviour
                 VisEquipment.CleanupInstance(go);
                 go.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
                 CleanUpArrow(go);
+                if (requireCentering) CenterArrowByBounds(go);
                 m_arrowInstances.Add(go);
                 ++count;
             }
         }
         else
         {
-            if (m_currentArrowStack < previousStack)
+            int maxAttachPoints = arrows.childCount;
+            int previousVisualCount = Mathf.Min(previousStack, maxAttachPoints);
+            int currentVisualCount = Mathf.Min(m_currentArrowStack, maxAttachPoints);
+            
+            if (currentVisualCount < previousVisualCount)
             {
-                int difference = previousStack - m_currentArrowStack;
+                int difference = previousVisualCount - currentVisualCount;
                 for (int i = m_arrowInstances.Count - 1; i >= 0 && difference > 0; --i)
                 {
                     GameObject? instance = m_arrowInstances[i];
@@ -539,9 +534,9 @@ public class BagEquipment : MonoBehaviour
                     --difference;
                 }
             }
-            else
+            else if (currentVisualCount > previousVisualCount)
             {
-                int difference = m_currentArrowStack - previousStack;
+                int difference = currentVisualCount - previousVisualCount;
                 foreach (Transform child in arrows)
                 {
                     if (difference == 0) break;
@@ -550,11 +545,40 @@ public class BagEquipment : MonoBehaviour
                     VisEquipment.CleanupInstance(go);
                     go.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
                     CleanUpArrow(go);
+                    if (requireCentering) CenterArrowByBounds(go);
                     m_arrowInstances.Add(go);
                     --difference;
                 }
             }
         }
+    }
+    
+    private static void CenterArrowByBounds(GameObject arrowInstance)
+    {
+        Renderer[] renderers = arrowInstance.GetComponentsInChildren<Renderer>();
+    
+        if (renderers.Length == 0) return;
+    
+        // Calculate combined bounds
+        Bounds combinedBounds = renderers[0].bounds;
+        for (int i = 1; i < renderers.Length; i++)
+        {
+            combinedBounds.Encapsulate(renderers[i].bounds);
+        }
+    
+        // Get world space center
+        Vector3 boundsCenter = combinedBounds.center;
+    
+        // Convert to local space of the arrow instance
+        Vector3 localOffset = arrowInstance.transform.InverseTransformPoint(boundsCenter);
+    
+        Vector3 correction = new Vector3(
+            -localOffset.x,  // Center horizontally
+            -localOffset.y,  // Center vertically
+            -localOffset.z     // Align to back of arrow (nock end)
+        );
+    
+        arrowInstance.transform.localPosition = correction;
     }
 
     private static void CleanUpArrow(GameObject go)
@@ -609,9 +633,13 @@ public class BagEquipment : MonoBehaviour
         }
         else
         {
-            if (m_currentOreStack < previousStack)
+            int maxAttachPoints = ores.childCount;
+            int previousVisualCount = Mathf.Min(previousStack, maxAttachPoints);
+            int currentVisualCount = Mathf.Min(m_currentArrowStack, maxAttachPoints);
+            
+            if (currentVisualCount < previousVisualCount)
             {
-                int difference = previousStack - m_currentOreStack;
+                int difference = previousVisualCount - currentVisualCount;
                 for (int i = m_oreInstances.Count - 1; i >= 0 && difference > 0; --i)
                 {
                     GameObject? instance = m_oreInstances[i];
@@ -620,9 +648,9 @@ public class BagEquipment : MonoBehaviour
                     --difference;
                 }
             }
-            else
+            else if (currentVisualCount > previousVisualCount)
             {
-                int difference = m_currentOreStack - previousStack;
+                int difference = currentVisualCount - previousVisualCount;
                 foreach (Transform child in ores)
                 {
                     if (difference == 0) break;
@@ -656,12 +684,13 @@ public class BagEquipment : MonoBehaviour
         int oreStack = zdo?.GetInt(BagVars.OreStack) ?? m_oreStack;
         int scythHash = zdo?.GetInt(BagVars.Scyth) ?? (string.IsNullOrEmpty(m_scytheItem) ? 0 : m_scytheItem.GetStableHashCode());
         int harpoonHash = zdo?.GetInt(BagVars.Harpoon) ?? (string.IsNullOrEmpty(m_harpoonItem) ? 0 : m_harpoonItem.GetStableHashCode());
+        bool requireCentering = zdo?.GetBool(BagVars.AutoCenter) ?? m_requireCentering;
         
         SetBagEquipped(bagHash);
         SetQuiverEquipped(quiverHash);
         SetLanternEquipped(lanternHash);
         SetPickaxeEquipped(pickaxeHash);
-        SetArrowEquipped(arrowHash, arrowStack);
+        SetArrowEquipped(arrowHash, arrowStack, requireCentering);
         SetFishingRodEquipped(fishingRodHash);
         SetCultivatorEquipped(cultivatorHash);
         SetHammerEquipped(hammerHash);
@@ -808,4 +837,5 @@ public static class BagVars
     public static readonly int OreStack = "ExtraSlot.Bag.OreStack".GetStableHashCode();
     public static readonly int Scyth = "ExtraSlot.Bag.Scyth".GetStableHashCode();
     public static readonly int Harpoon = "ExtraSlot.Bag.Harpoon".GetStableHashCode();
+    public static readonly int AutoCenter = "ExtraSlot.Quiver.AutoCenter".GetStableHashCode();
 }

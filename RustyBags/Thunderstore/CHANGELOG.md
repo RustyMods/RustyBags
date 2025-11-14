@@ -1,8 +1,14 @@
+# 1.1.7
+- fixed crossbow quiver bolts being positioned oddly by auto-centering mesh by bounds
+- fixed quiver arrow/bolts visual disappearing if stack change greater than max attach points
+- added hide crossbow quiver straps on equip
+
 # 1.1.6
 - removed warning logs when successfully replaced models (was a dev log)
 - made it possible to equip both quiver and a bag
 - modified charred charm to slash dmg
 - added quiver slot to EPI
+- hidding crossbow quiver straps on equip
 - added config to on/off bag and quiver slot from EPI
 
 # 1.1.5
@@ -14,9 +20,11 @@
 - added model replacements to reduce plugin size
 - decimated quiver mesh to reduce size, 26mb --> 5mb
 - dll size from 25.5mb --> 6.4mb
+- hidding crossbow quiver straps on equip
 
 # 1.1.4
-- fixed bag not updating visuals if player dies / destroyed, needed to re-bind delegate
+- fixed bag not updating visuals if player dies / des
+- hidding crossbow quiver straps on equiptroyed, needed to re-bind delegate
 
 # 1.1.3
 - added zen construction and azu crafty boxes as soft dependency to make sure mod loads after theirs to check for conflicts
