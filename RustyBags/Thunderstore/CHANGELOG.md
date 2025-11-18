@@ -1,3 +1,8 @@
+# 1.1.8
+- attempt at controller support by getting `hovered item` via `selected item` set by gamepad, i do not have a controller, so will need feedback
+- crossbow quiver: if bolt is not vanilla, then will randomly choose a vanilla bolt visual as replacement.
+- added patch to allow bags to be enchantable by EpicLoot
+
 # 1.1.7
 - fixed crossbow quiver bolts being positioned oddly by auto-centering mesh by bounds
 - fixed quiver arrow/bolts visual disappearing if stack change greater than max attach points

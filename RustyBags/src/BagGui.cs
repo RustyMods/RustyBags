@@ -147,29 +147,21 @@ public static class BagGui
         {
             if (!__instance.m_animator.GetBool(visible) || __instance.m_currentContainer != null || m_currentBag == null) return true;
             
-            // if (!AutoOpen || __instance.IsStackAllButtonHidden())
-            // {
-            //     Vector2i pos = new Vector2i(Mathf.RoundToInt(ZInput.mousePosition.x), Mathf.RoundToInt(ZInput.mousePosition.y));
-            //     ItemDrop.ItemData? item = __instance.m_playerGrid.GetItem(pos);
-            //
-            //     if (item is not Bag && (ZInput.GetButton("Use") || ZInput.GetButton("JoyUse")))
-            //     {
-            //         // if jewel bag or other items that use interact button, is interacted with, close bag.
-            //         m_currentBag.Close();
-            //     }
-            //     else if (item == m_currentBag)
-            //     {
-            //         m_currentBag.Open();
-            //     }
-            //     
-            //     if (!m_currentBag.isOpen) return true;
-            // }
-            
             if (AutoOpen && !__instance.IsStackAllButtonHidden()) m_currentBag.Open();
-            
-            Vector2i pos = new Vector2i(Mathf.RoundToInt(ZInput.mousePosition.x), Mathf.RoundToInt(ZInput.mousePosition.y));
-            ItemDrop.ItemData? item = __instance.m_playerGrid.GetItem(pos);
 
+            Vector2i pos;
+            
+            if (ZInput.IsGamepadActive() && !ZInput.IsMouseActive())
+            {
+                pos = __instance.m_playerGrid.m_selected;
+            }
+            else
+            {
+                pos = new Vector2i(Mathf.RoundToInt(ZInput.mousePosition.x), Mathf.RoundToInt(ZInput.mousePosition.y));
+            }
+            
+            ItemDrop.ItemData? item = __instance.m_playerGrid.GetItem(pos);
+            
             if (item is not Bag && (ZInput.GetButton("Use") || ZInput.GetButton("JoyUse")))
             {
                 m_currentBag.Close();
@@ -187,7 +179,6 @@ public static class BagGui
                 
             if (!m_currentBag.isOpen) return true;
             
-            // m_currentBag.isOpen = true;
             
             __instance.m_container.gameObject.SetActive(true);
             __instance.m_stackAllButton.gameObject.SetActive(true);
@@ -257,8 +248,7 @@ public static class BagGui
     {
         [UsedImplicitly]
         private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) => AddBagWornItems(instructions);
-
-        // I do not know why, but without this postfix, durability changes to items in bag are not saved
+        
         [UsedImplicitly]
         private static void Postfix() => Player.m_localPlayer?.GetEquippedBag()?.inventory.Changed();
     }

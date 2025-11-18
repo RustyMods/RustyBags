@@ -140,6 +140,8 @@
         <Compile Include="src\BagGui.cs" />
         <Compile Include="src\BagInventory.cs" />
         <Compile Include="src\BagEquipment.cs" />
+        <Compile Include="src\BoltExclusion.cs" />
+        <Compile Include="src\EpicLoot_Compat.cs" />
         <Compile Include="src\ModelReplacer.cs" />
         <Compile Include="src\Quiver.cs" />
         <Compile Include="src\SE_Bag.cs" />
@@ -197,10 +199,10 @@
             <PackageDir>$(ProjectDir)\Thunderstore\$(PackageName)</PackageDir>
         </PropertyGroup>
     </Target>
-    <Target Name="CopyOutputDLL" AfterTargets="GetAssemblyVersion">
-        <Error Text="DLL not found in target directory." Condition="!Exists('$(TargetDir)$(AssemblyName).dll')"/>
-        <Copy SourceFiles="$(TargetDir)$(AssemblyName).dll" DestinationFolder="$(CopyOutputDLLPath)" OverwriteReadOnlyFiles="true"/>
-        <Copy SourceFiles="$(TargetDir)$(AssemblyName).dll" DestinationFolder="$(CopyOutputDLLPath2)" OverwriteReadOnlyFiles="true" Condition="Exists('$(CopyOutputDLLPath2)')"/>
-        <Copy SourceFiles="$(TargetDir)$(AssemblyName).dll" DestinationFolder="$(CopyOutputDLLPath3)" OverwriteReadOnlyFiles="true" Condition="Exists('$(CopyOutputDLLPath3)')"/>
-    </Target>
+<!--    <Target Name="CopyOutputDLL" AfterTargets="GetAssemblyVersion">-->
+<!--        <Error Text="DLL not found in target directory." Condition="!Exists('$(TargetDir)$(AssemblyName).dll')"/>-->
+<!--        <Copy SourceFiles="$(TargetDir)$(AssemblyName).dll" DestinationFolder="$(CopyOutputDLLPath)" OverwriteReadOnlyFiles="true"/>-->
+<!--        <Copy SourceFiles="$(TargetDir)$(AssemblyName).dll" DestinationFolder="$(CopyOutputDLLPath2)" OverwriteReadOnlyFiles="true" Condition="Exists('$(CopyOutputDLLPath2)')"/>-->
+<!--        <Copy SourceFiles="$(TargetDir)$(AssemblyName).dll" DestinationFolder="$(CopyOutputDLLPath3)" OverwriteReadOnlyFiles="true" Condition="Exists('$(CopyOutputDLLPath3)')"/>-->
+<!--    </Target>-->
 </Project>

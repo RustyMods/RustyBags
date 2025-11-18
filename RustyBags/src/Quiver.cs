@@ -39,7 +39,15 @@ public class Quiver : Bag
 
         if (ammoItem?.m_shared.m_ammoType == "$ammo_bolts")
         {
-            m_bagEquipment?.SetArrowItem(ammoItem?.m_dropPrefab.name ?? "", ammoItem?.m_stack ?? 0, true);
+            if (!ammoItem.IsValidBolt())
+            {
+                string randomBolt = BoltExclusion.GetRandomBoltName();
+                m_bagEquipment?.SetArrowItem(ammoItem != null ? randomBolt : "", ammoItem?.m_stack ?? 0, true);
+            }
+            else
+            {
+                m_bagEquipment?.SetArrowItem(ammoItem?.m_dropPrefab.name ?? "", ammoItem?.m_stack ?? 0, true);
+            }
         }
         else
         {

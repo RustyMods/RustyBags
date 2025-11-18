@@ -198,7 +198,7 @@ public class Bag : ItemDrop.ItemData
     public Bag(ItemDrop.ItemData item)
     {
         m_shared = item.m_shared;
-        m_shared.m_itemType = ItemType.Misc;
+        m_shared.m_itemType = RustyBagsPlugin.isEpicLootLoaded ? ItemType.Trinket : ItemType.Misc;
         m_customData = item.m_customData;
         baseWeight = m_shared.m_weight;
 
