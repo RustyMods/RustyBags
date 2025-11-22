@@ -1,3 +1,10 @@
+# 1.2.0
+- added patch for gamepad support to move to lower inventory grid
+- fixed epicloot compatiblity patch
+
+# 1.1.9
+- pushed wrong .dll, oops
+
 # 1.1.8
 - attempt at controller support by getting `hovered item` via `selected item` set by gamepad, i do not have a controller, so will need feedback
 - crossbow quiver: if bolt is not vanilla, then will randomly choose a vanilla bolt visual as replacement.

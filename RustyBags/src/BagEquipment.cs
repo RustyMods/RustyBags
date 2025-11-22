@@ -635,7 +635,7 @@ public class BagEquipment : MonoBehaviour
         {
             int maxAttachPoints = ores.childCount;
             int previousVisualCount = Mathf.Min(previousStack, maxAttachPoints);
-            int currentVisualCount = Mathf.Min(m_currentArrowStack, maxAttachPoints);
+            int currentVisualCount = Mathf.Min(m_currentOreStack, maxAttachPoints);
             
             if (currentVisualCount < previousVisualCount)
             {

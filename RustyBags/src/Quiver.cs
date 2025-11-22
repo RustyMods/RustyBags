@@ -97,7 +97,6 @@ public class Quiver : Bag
         private static bool Prefix(Attack __instance, out ItemDrop.ItemData? ammoItem, ref bool __result)
         {
             ammoItem = __instance.m_character.GetAmmoItem();
-            // if (ammoItem != null || __instance.m_character.GetEquippedQuiver() is not {} quiver || quiver.ammoItem == null || quiver.ammoItem.m_shared.m_ammoType != __instance.m_weapon.m_shared.m_ammoType) return true;
             if (ammoItem?.m_shared.m_ammoType != __instance.m_weapon.m_shared.m_ammoType)
             {
                 ammoItem = null;
@@ -106,19 +105,16 @@ public class Quiver : Bag
             
             if (__instance.m_character.GetEquippedQuiver() is not {} quiver)
             {
-                // RustyBagsPlugin.RustyBagsLogger.LogDebug("No quiver equipped");
                 return true;
             }
 
             if (quiver.ammoItem == null)
             {
-                // RustyBagsPlugin.RustyBagsLogger.LogDebug($"{quiver.m_shared.m_name} has no ammer");
                 return true;
             }
 
             if (quiver.ammoItem.m_shared.m_ammoType != __instance.m_weapon.m_shared.m_ammoType)
             {
-                // RustyBagsPlugin.RustyBagsLogger.LogDebug($"{quiver.ammoItem.m_shared.m_name} wrong ammo type");
                 return true;
             }
             

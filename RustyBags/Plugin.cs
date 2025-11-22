@@ -22,13 +22,13 @@ namespace RustyBags
     public class RustyBagsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "RustyBags";
-        internal const string ModVersion = "1.1.8";
+        internal const string ModVersion = "1.2.0";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         public const string ConfigFileName = ModGUID + ".cfg";
         public static readonly string ConfigFileFullPath = Paths.ConfigPath + Path.DirectorySeparatorChar + ConfigFileName;
         internal static string ConnectionError = "";
-        private readonly Harmony _harmony = new(ModGUID);
+        public readonly Harmony _harmony = new(ModGUID);
         public static readonly ManualLogSource RustyBagsLogger = BepInEx.Logging.Logger.CreateLogSource(ModName);
         public static readonly ConfigSync ConfigSync = new(ModGUID) { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = ModVersion };
 
@@ -255,7 +255,7 @@ namespace RustyBags
             Localizer.Load();
             SetupEPI();
             BagCraft.Init();
-            
+            EpicLoot_Compat.Load();
             Assembly assembly = Assembly.GetExecutingAssembly();
             _harmony.PatchAll(assembly);
         }

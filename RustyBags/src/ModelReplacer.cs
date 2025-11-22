@@ -29,17 +29,17 @@ public class ModelReplacer
         if (_scene == null) return;
         foreach (var replacement in replacements)
         {
-            var target = Prefab.transform.Find(replacement.Key);
+            Transform? target = Prefab.transform.Find(replacement.Key);
             if (target == null) continue;
-            var source = _scene.m_prefabs.Find(x => x.name == replacement.Value.source);
+            GameObject? source = _scene.m_prefabs.Find(x => x.name == replacement.Value.source);
             if (source == null) continue;
-            var model = source.transform.Find(replacement.Value.target);
+            Transform? model = source.transform.Find(replacement.Value.target);
             if (model == null) continue;
-            var renderer = model.GetComponent<MeshRenderer>();
-            var filter = model.GetComponent<MeshFilter>();
+            MeshRenderer? renderer = model.GetComponent<MeshRenderer>();
+            MeshFilter? filter = model.GetComponent<MeshFilter>();
             if (renderer == null || filter == null) continue;
-            var targetFilter = target.GetComponent<MeshFilter>();
-            var targetRenderer = target.GetComponent<MeshRenderer>();
+            MeshFilter? targetFilter = target.GetComponent<MeshFilter>();
+            MeshRenderer? targetRenderer = target.GetComponent<MeshRenderer>();
             if (targetFilter == null || targetRenderer == null) continue;
 
             targetFilter.mesh = filter.mesh;
