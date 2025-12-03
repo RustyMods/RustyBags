@@ -23,7 +23,7 @@ public static class RustyBags_API
     
     static RustyBags_API()
     {
-        if (Type.GetType($"{Namespace},{ClassName}, {Assembly}") is not { } api) return;
+        if (Type.GetType($"{Namespace}.{ClassName}, {Assembly}") is not { } api) return;
         isLoaded = true;
 
         API_IsBag = api.GetMethod("IsBag", BindingFlags.Public | BindingFlags.Static);
