@@ -55,7 +55,8 @@ public static class BagCraft
 
     private static bool HasConflicts()
     {
-        return Harmony.GetPatchInfo(AccessTools.Method(typeof(Player), nameof(Player.HaveRequirementItems)))?.Owners.Count > 0;
+        return Harmony.GetPatchInfo(AccessTools.Method(typeof(Player), nameof(Player.HaveRequirementItems)))?.Owners.Count > 0 
+               || Harmony.GetPatchInfo(AccessTools.Method(typeof(InventoryGui),nameof(InventoryGui.SetupRequirement)))?.Owners.Count > 0;
     }
 
     public static void Init()

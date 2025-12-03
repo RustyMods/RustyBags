@@ -87,7 +87,6 @@ public class BagEquipment : MonoBehaviour
         StatusEffect? oldSE = m_currentBagItem?.m_shared.m_equipStatusEffect;
         StatusEffect? newSE = bag?.m_shared.m_equipStatusEffect;
         m_currentBagItem = bag;
-        
         m_currentBagItem?.OnEquip(this);
         
         SetBagItem(m_currentBagItem?.m_dropPrefab.name ?? "");
@@ -235,7 +234,7 @@ public class BagEquipment : MonoBehaviour
 
     public void SetBagItem(string item)
     {
-        m_bagItem = item;
+        m_bagItem = Configs.HideBag ? "" : item;
         if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
         int bagHash = string.IsNullOrEmpty(m_bagItem) ? 0 : m_bagItem.GetStableHashCode();
         m_nview.GetZDO().Set(BagVars.Bag, bagHash);

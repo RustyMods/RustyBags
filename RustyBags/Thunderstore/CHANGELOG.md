@@ -1,3 +1,13 @@
+# 1.3.0
+- added compatibility check against adventure backpacks, if loaded, will disable craft from bag
+- added config `Hide bag` and `Auto-open` that can be `On/Off`
+
+# 1.2.11
+- fixed gamepad support when moving item from inventory to bag
+
+# 1.2.1
+- pushed wrong version again, damn
+
 # 1.2.0
 - added patch for gamepad support to move to lower inventory grid
 - fixed epicloot compatiblity patch
@@ -72,7 +82,7 @@
 - Updating bag weight on unequip to make sure effects are only applied while bag is equipped
 - Fixed bag weight on first player load, so even unequipped bags have corrected weight
 
-# 1.0.5 
+# 1.0.5
 - Added on-hover behavior to make sure bag container UI opens
 - for compatibility with jeweler bag and `Quick Stack Store Sort Trash Restock`
 - since QSSSTR hides take all button as well.

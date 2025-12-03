@@ -129,6 +129,7 @@
         </Reference>
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="API.cs" />
         <Compile Include="Managers\Configs.cs" />
         <Compile Include="Managers\ItemManager.cs"/>
         <Compile Include="Managers\LocalizationManager.cs"/>

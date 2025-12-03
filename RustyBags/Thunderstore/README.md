@@ -24,6 +24,7 @@ Tools like the Cultivator, Hoe, Lantern, Pickaxe, Melee Weapons, Atgeir, Fishing
 - Bags cannot be stored inside other bags
 - Quivers only accept arrows
 - If you reduce your inventory size, you may lose stored items
+- Hover over bag to open if it does not auto-open
 
 ---
 

@@ -148,7 +148,8 @@ public static class BagGui
         {
             if (!__instance.m_animator.GetBool(visible) || __instance.m_currentContainer != null || m_currentBag == null) return true;
             
-            if (AutoOpen && !__instance.IsStackAllButtonHidden() || (ZInput.IsGamepadActive() && !ZInput.IsMouseActive())) m_currentBag.Open();
+            if ((AutoOpen && !__instance.IsStackAllButtonHidden() ||
+                 (ZInput.IsGamepadActive() && !ZInput.IsMouseActive())) && Configs.AutoOpen) m_currentBag.Open();
 
             ItemDrop.ItemData? item;
             if (ZInput.IsGamepadActive() && !ZInput.IsMouseActive())
@@ -161,7 +162,7 @@ public static class BagGui
                 item = __instance.m_playerGrid.GetItem(pos);
             }
             
-            if (item is not Bag && (ZInput.GetButton("Use") || ZInput.GetButton("JoyUse")))
+            if (item is not Bag && (ZInput.GetButton("Use") || ZInput.GetButton("JoyUse")) && __instance.m_dragItem == null)
             {
                 m_currentBag.Close();
             }

@@ -9,21 +9,27 @@ namespace RustyBags;
 
 public static class EpicLoot_Compat
 {
+    private static Assembly? epicLootAssembly;
+    
     public static void Load()
     {
         if (!RustyBagsPlugin.isEpicLootLoaded) return;
 
-        MethodBase? method = TryGetEquipmentMethod();
-        if (method == null) return;
-        
-        RustyBagsPlugin.instance._harmony.Patch(method, postfix: new HarmonyMethod(typeof(EpicLoot_Compat), nameof(Patch_EpicLoot_Player_GetEquipment)));
+        epicLootAssembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "EpicLoot");
+
+        if (epicLootAssembly == null)
+        {
+            return;
+        }
+
+        if (TryGetEquipmentMethod() is { } tryGetEquipmentMethod)
+        {
+            RustyBagsPlugin.instance._harmony.Patch(tryGetEquipmentMethod, postfix: new HarmonyMethod(typeof(EpicLoot_Compat), nameof(Patch_EpicLoot_Player_GetEquipment)));
+        }
     }
 
     private static MethodBase? TryGetEquipmentMethod()
     {
-        Assembly? epicLootAssembly = AppDomain.CurrentDomain.GetAssemblies()
-            .FirstOrDefault(a => a.GetName().Name == "EpicLoot");
-        
         if (epicLootAssembly == null)
         {
             return null;

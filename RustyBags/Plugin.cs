@@ -14,6 +14,7 @@ using Toggle = RustyBags.Managers.Toggle;
 
 namespace RustyBags
 {
+    [BepInDependency("vapok.mods.adventurebackpacks", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("randyknapp.mods.epicloot", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("Azumatt.AzuCraftyBoxes", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("ZenDragon.ZenConstruction", BepInDependency.DependencyFlags.SoftDependency)]
@@ -22,7 +23,7 @@ namespace RustyBags
     public class RustyBagsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "RustyBags";
-        internal const string ModVersion = "1.2.0";
+        internal const string ModVersion = "1.3.0";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         public const string ConfigFileName = ModGUID + ".cfg";
@@ -35,6 +36,7 @@ namespace RustyBags
         public static RustyBagsPlugin instance = null!;
         public static readonly Dir BagDir = new (Paths.ConfigPath, "RustyBags");
         public static GameObject root = null!;
+
 
         public static bool isEpicLootLoaded;
         public void Awake()
