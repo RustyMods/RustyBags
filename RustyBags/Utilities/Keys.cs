@@ -35,8 +35,12 @@ public static class Keys
     public static readonly string Allowed = new Key("$msg_allowed", "allowed").key;
     public static readonly string OreWeight = new Key("$se_oreweight", "Ore Weight").key;
     public static readonly string Bag = new Key("$label_bag", "Bag").key;
-    public static readonly string Quiver = new Key("$label_quiver", "Quiver").key;
+    public static readonly string Quiver = new Key("$label_quiver_rs", "Quiver Bag").key;
     public static readonly string IfEquippedToBag = new Key("$se_charm_equipped", "If equipped to bag").key;
+    public static readonly string Hide = new Key("$bag_hide", "Hide").key;
+    public static readonly string Show = new Key("$bag_show", "Show").key;
+    public static readonly string Auto = new Key("$bag_auto", "Auto").key;
+    public static readonly string Manual = new Key("$bag_manual", "Manual").key;
     
     public const string Blunt = "$inventory_blunt";
     public const string Slash = "$inventory_slash";

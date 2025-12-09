@@ -1,3 +1,14 @@
+# 1.3.2
+- fixed bag not auto-opening if interacting with crafting station
+- bag set auto-open to false if opening smoothbrain's backpacks
+
+# 1.3.1
+- renamed extended player inventory quiver slot to Quiver Bag, to make it compatible with BowsBeforeHoes
+- removed config to auto-open and hide
+- added in-game buttons to auto-open and hide set per bag
+- default state for bag is `auto-open: false`, `hidden: false`
+- added gamepad support to scroll container grid
+
 # 1.3.0
 - added compatibility check against adventure backpacks, if loaded, will disable craft from bag
 - added config `Hide bag` and `Auto-open` that can be `On/Off`

@@ -16,11 +16,11 @@ public static class BagGui
 
     public static Bag? m_currentBag;
 
-    private static readonly bool AutoOpen;
+    private static readonly bool ShouldCheckAutoOpen;
 
     static BagGui()
     {
-        AutoOpen = Harmony.GetPatchInfo(AccessTools.Method(typeof(InventoryGui), nameof(InventoryGui.UpdateContainer))).Owners.Count == 1;
+        ShouldCheckAutoOpen = Harmony.GetPatchInfo(AccessTools.Method(typeof(InventoryGui), nameof(InventoryGui.UpdateContainer))).Owners.Count > 1;
     }
 
     [HarmonyPatch(typeof(Player), nameof(Player.SetLocalPlayer))]
@@ -146,10 +146,16 @@ public static class BagGui
         [HarmonyPriority(Priority.Last)]
         private static bool Prefix(InventoryGui __instance, Player player)
         {
-            if (!__instance.m_animator.GetBool(visible) || __instance.m_currentContainer != null || m_currentBag == null) return true;
-            
-            if ((AutoOpen && !__instance.IsStackAllButtonHidden() ||
-                 (ZInput.IsGamepadActive() && !ZInput.IsMouseActive())) && Configs.AutoOpen) m_currentBag.Open();
+            if (!__instance.m_animator.GetBool(visible) || __instance.m_currentContainer != null || m_currentBag == null)
+            {
+                BagButtons.instance?.Hide();
+                return true;
+            }
+
+            if (m_currentBag.autoOpen)
+            {
+                m_currentBag.Open();
+            }
 
             ItemDrop.ItemData? item;
             if (ZInput.IsGamepadActive() && !ZInput.IsMouseActive())
@@ -162,9 +168,11 @@ public static class BagGui
                 item = __instance.m_playerGrid.GetItem(pos);
             }
             
-            if (item is not Bag && (ZInput.GetButton("Use") || ZInput.GetButton("JoyUse")) && __instance.m_dragItem == null)
+            if (ShouldCheckAutoOpen && item != null && item is not Bag && (ZInput.GetButton("Use") || ZInput.GetButton("JoyUse")) && __instance.m_dragItem == null)
             {
                 m_currentBag.Close();
+                m_currentBag.SetAuto(false, false);
+                BagButtons.instance?.Hide();
             }
             else if (item is Bag bag && m_currentBag != bag)
             {
@@ -178,7 +186,22 @@ public static class BagGui
             }
                 
             if (!m_currentBag.isOpen) return true;
-            
+            BagButtons.instance?.Show(m_currentBag);
+
+            if (ZInput.IsGamepadActive() && !ZInput.IsMouseActive())
+            {
+                float scrollValue = __instance.m_containerGrid.m_scrollbar.value;
+                if (ZInput.GetButtonDown("JoyRStickUp"))
+                {
+                    __instance.m_containerGrid.m_scrollbar.value = Mathf.Clamp01(scrollValue + 0.1f);
+                }
+
+                if (ZInput.GetButtonDown("JoyRStickDown"))
+                {
+                    __instance.m_containerGrid.m_scrollbar.value = Mathf.Clamp01(scrollValue - 0.1f);
+                }
+            }
+
             __instance.m_container.gameObject.SetActive(true);
             __instance.m_stackAllButton.gameObject.SetActive(true);
             __instance.m_containerGrid.UpdateInventory(m_currentBag.inventory, player, __instance.m_dragItem);
@@ -194,14 +217,6 @@ public static class BagGui
             return false;
         }
     }
-
-    private static bool IsStackAllButtonHidden(this InventoryGui instance)
-    {
-        // jewelcrafting and backpacks disables take all button,
-        // so use this to check if jewelcrafting bag or backpack is active
-        return !instance.m_stackAllButton.gameObject.activeSelf;
-    }
-
     
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.OnStackAll))]
     private static class InventoryGui_OnStackAll_Patch

@@ -23,7 +23,7 @@ namespace RustyBags
     public class RustyBagsPlugin : BaseUnityPlugin
     {
         internal const string ModName = "RustyBags";
-        internal const string ModVersion = "1.3.0";
+        internal const string ModVersion = "1.3.2";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
         public const string ConfigFileName = ModGUID + ".cfg";
@@ -66,7 +66,7 @@ namespace RustyBags
             leatherBag.RequiredUpgradeItems.Add("DeerHide", 5, 4);
             leatherBag.RequiredUpgradeItems.Add("Bronze", 5, 4);
             leatherBag.Crafting.Add(CraftingTable.Workbench, 1);
-            var leatherSetup = new BagSetup(leatherBag, 5, 2);
+            BagSetup leatherSetup = new BagSetup(leatherBag, 5, 2);
             leatherSetup.AddSizePerQuality(6, 2, 2);
             leatherSetup.AddSizePerQuality(7, 2, 3);
             leatherSetup.AddSizePerQuality(8, 2, 4);
@@ -92,7 +92,7 @@ namespace RustyBags
             barrelBag.RequiredUpgradeItems.Add("WolfClaw", 3, 4);
             barrelBag.RequiredUpgradeItems.Add("WolfHairBundle", 2, 4);
             barrelBag.Crafting.Add(CraftingTable.Forge, 1);
-            var barrelSetup = new BagSetup(barrelBag, 8, 2);
+            BagSetup barrelSetup = new BagSetup(barrelBag, 8, 2);
             barrelSetup.AddSizePerQuality(8, 3, 2);
             barrelSetup.AddSizePerQuality(8, 4, 3);
             barrelSetup.AddSizePerQuality(8, 5, 4);
@@ -118,7 +118,7 @@ namespace RustyBags
             minerBag.RequiredUpgradeItems.Add("WolfClaw", 3, 4);
             minerBag.RequiredUpgradeItems.Add("WolfHairBundle", 2, 4);
             minerBag.Crafting.Add(CraftingTable.Forge, 1);
-            var minerSetup = new BagSetup(minerBag, 6, 2, replaceShader: false, isOreBag: true);
+            BagSetup minerSetup = new BagSetup(minerBag, 6, 2, replaceShader: false, isOreBag: true);
             minerSetup.AddSizePerQuality(7, 3, 2);
             minerSetup.AddSizePerQuality(7, 4, 3);
             minerSetup.AddSizePerQuality(8, 4, 4);
@@ -146,12 +146,12 @@ namespace RustyBags
             bearBag.RequiredUpgradeItems.Add("Flax", 40, 4);
             bearBag.RequiredUpgradeItems.Add("LoxPelt", 20, 4);
             bearBag.Crafting.Add(CraftingTable.Workbench, 1);
-            var bearSetup = new BagSetup(bearBag, 8, 5);
+            BagSetup bearSetup = new BagSetup(bearBag, 8, 5);
             bearSetup.AddSizePerQuality(8, 6, 2);
             bearSetup.AddSizePerQuality(8, 7, 3);
             bearSetup.AddSizePerQuality(8, 8, 4);
             bearSetup.statusEffect.m_baseCarryWeight = 75f;
-            var bearBagReplacement = new ModelReplacer(bearBag.Prefab);
+            ModelReplacer bearBagReplacement = new ModelReplacer(bearBag.Prefab);
             bearBagReplacement.Add("attach/model/bear/default", new ModelReplacer.ReplacementInfo("TrophyBjornUndead", "attach/default"));
             bearBagReplacement.Add("attach/model/bear/model", new ModelReplacer.ReplacementInfo("UndeadBjornRibcage", "model"));
 

@@ -89,7 +89,7 @@ public class BagEquipment : MonoBehaviour
         m_currentBagItem = bag;
         m_currentBagItem?.OnEquip(this);
         
-        SetBagItem(m_currentBagItem?.m_dropPrefab.name ?? "");
+        SetBagItem(m_currentBagItem?.m_dropPrefab.name ?? "", m_currentBagItem?.hidden ?? true);
         
         SetLanternItem(m_currentBagItem?.lantern?.m_dropPrefab.name ?? "");
         SetPickaxeItem(m_currentBagItem?.pickaxe?.m_dropPrefab.name ?? "");
@@ -115,7 +115,7 @@ public class BagEquipment : MonoBehaviour
         StatusEffect? newSE = quiver?.m_shared.m_equipStatusEffect;
         m_currentQuiverItem = quiver;
         m_currentQuiverItem?.OnEquip(this);
-        SetQuiverItem(m_currentQuiverItem?.m_dropPrefab.name ?? "");
+        SetQuiverItem(m_currentQuiverItem?.m_dropPrefab.name ?? "", m_currentQuiverItem?.hidden ?? true);
 
         if (m_currentQuiverItem?.ammoItem?.m_shared.m_ammoType == "$ammo_bolts")
         {
@@ -212,11 +212,11 @@ public class BagEquipment : MonoBehaviour
         m_nview.GetZDO().Set(BagVars.Hoe, hoeHash);
     }
 
-    public void SetQuiverItem(string item)
+    public void SetQuiverItem(string item, bool hidden)
     {
-        m_quiverItem = item;
+        m_quiverItem = hidden ? "" : item;
         if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
-        int quiverHash = string.IsNullOrEmpty(item) ? 0 : item.GetStableHashCode();
+        int quiverHash = string.IsNullOrEmpty(m_quiverItem) ? 0 : m_quiverItem.GetStableHashCode();
         m_nview.GetZDO().Set(BagVars.Quiver, quiverHash);
     }
 
@@ -232,9 +232,9 @@ public class BagEquipment : MonoBehaviour
         m_nview.GetZDO().Set(BagVars.AutoCenter, requireCentering);
     }
 
-    public void SetBagItem(string item)
+    public void SetBagItem(string item, bool hidden)
     {
-        m_bagItem = Configs.HideBag ? "" : item;
+        m_bagItem = hidden ? "" : item;
         if (m_nview.GetZDO() == null || !m_nview.IsOwner()) return;
         int bagHash = string.IsNullOrEmpty(m_bagItem) ? 0 : m_bagItem.GetStableHashCode();
         m_nview.GetZDO().Set(BagVars.Bag, bagHash);
@@ -331,6 +331,7 @@ public class BagEquipment : MonoBehaviour
         {
             Destroy(m_bagInstance);
             ResetAttachInstances();
+            m_bagInstance = null;
         }
         m_currentBagHash = hash;
         ResetAttachHashes();
@@ -346,6 +347,7 @@ public class BagEquipment : MonoBehaviour
         {
             Destroy(m_quiverInstance);
             m_arrowInstances.Clear();
+            m_quiverInstance = null;
         }
         m_currentArrowHash = 0;
         m_currentArrowStack = 0;

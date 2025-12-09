@@ -174,6 +174,8 @@ public class BagSetup
 public class Bag : ItemDrop.ItemData
 {
     private const string BAG_DATA_KEY = "RustyBag.CustomData.Inventory.Data";
+    private const string BAG_AUTO_KEY = "RustyBag.CustomData.AutoOpen";
+    private const string BAG_HIDE_KEY = "RustyBag.CustomData.Hidden";
     private static readonly HashSet<string> lanternNames = new() { "$item_lantern" };
     public static void RegisterLantern(string name) => lanternNames.Add(name);
     
@@ -181,6 +183,9 @@ public class Bag : ItemDrop.ItemData
     public bool isLoaded;
     private readonly float baseWeight;
     public bool isOpen;
+
+    public bool hidden;
+    public bool autoOpen;
 
     protected BagEquipment? m_bagEquipment;
     
@@ -209,11 +214,32 @@ public class Bag : ItemDrop.ItemData
     {
         if (isOpen) return;
         isOpen = true;
+        BagGui.m_currentBag = this;
     }
     public void Close()
     {
         if (!isOpen) return;
         isOpen = false;
+    }
+
+    public void SetAuto(bool auto, bool save = true)
+    {
+        autoOpen = auto;
+        if (save) m_customData[BAG_AUTO_KEY] = autoOpen.ToString();
+    }
+
+    public void SetVisible(bool visible)
+    {
+        hidden = !visible;
+        m_customData[BAG_HIDE_KEY] = hidden.ToString();
+        if (this is Quiver)
+        {
+            m_bagEquipment?.SetQuiverItem(m_dropPrefab.name, hidden);
+        }
+        else
+        {
+            m_bagEquipment?.SetBagItem(m_dropPrefab.name, hidden);
+        }
     }
     
     public void OnEquip(BagEquipment equipment)
@@ -350,6 +376,8 @@ public class Bag : ItemDrop.ItemData
             UpdateAttachments();
         }
         inventory.m_onChanged = OnChanged;
+        autoOpen = m_customData.TryGetValue(BAG_AUTO_KEY, out string auto) && bool.TryParse(auto, out bool autoResult) && autoResult;
+        hidden = m_customData.TryGetValue(BAG_HIDE_KEY, out string hide) && bool.TryParse(hide, out bool hideResult) && hideResult;
         isLoaded = true;
     }
 
@@ -373,7 +401,7 @@ public class Bag : ItemDrop.ItemData
         float total = inventory.GetTotalWeight();
         if (m_shared.m_equipStatusEffect is SE_Bag se && m_equipped)
         {
-            SE_Bag effect = (se.Clone() as SE_Bag)!;
+            SE_Bag effect = (SE_Bag)se.Clone();
             effect.SetLevel(m_quality, 0f);
             effect.ModifyInventoryWeight(inventory, ref total);
         }

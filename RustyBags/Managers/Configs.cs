@@ -4,6 +4,7 @@ using BepInEx;
 using BepInEx.Configuration;
 using JetBrains.Annotations;
 using ServerSync;
+using UnityEngine;
 
 namespace RustyBags.Managers;
 
@@ -16,17 +17,11 @@ public static class Configs
     private static ConfigEntry<Toggle> _multipleBags = null!;
     private static ConfigEntry<Toggle> _craftFromBag = null!;
     private static ConfigEntry<Toggle> _charmsAffectBag = null!;
-    private static ConfigEntry<Toggle> _autoOpen = null!;
-    private static ConfigEntry<Toggle> _hideBag = null!;
 
     public static bool AutoStack => _autoStack.Value is Toggle.On;
     public static bool MultipleBags => _multipleBags.Value is Toggle.On;
     public static bool CraftFromBag => _craftFromBag.Value is Toggle.On;
-    
     public static bool CharmsAffectBag => _charmsAffectBag.Value is Toggle.On;
-    public static bool AutoOpen => _autoOpen.Value is Toggle.On;
-
-    public static bool HideBag => _hideBag.Value is Toggle.On;
 
     public static void Setup()
     {
@@ -36,8 +31,7 @@ public static class Configs
         _multipleBags = config("1 - General", "Multiple Bags", Toggle.Off, "If on, player can carry multiple bags");
         _craftFromBag = config("1 - General", "Craft From Bag", Toggle.On, "If on, player can build and craft with equipped bag contents");
         _charmsAffectBag = config("1 - General", "Attachment Bonuses", Toggle.Off, "If on, bag attachments affect bag");
-        _autoOpen = config("1 - General", "Auto-Open", Toggle.On, "If on, bag will open alongside inventory, else hover over bag to open");
-        _hideBag = config("1 - General", "Hide Bag", Toggle.Off, "If on, bag will be hidden");
+        BagButtons.position = config("Buttons", "Position", new Vector2(85f,350f), "Set position of buttons", false);
         
         foreach(BagSetup? bagSetup in BagSetup.bags.Values) bagSetup.SetupConfigs();
         SetupWatcher();

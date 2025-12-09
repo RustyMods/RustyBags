@@ -137,6 +137,7 @@
         <Compile Include="Plugin.cs"/>
         <Compile Include="Properties\AssemblyInfo.cs"/>
         <Compile Include="src\Bag.cs" />
+        <Compile Include="src\BagButtons.cs" />
         <Compile Include="src\BagCraft.cs" />
         <Compile Include="src\BagGui.cs" />
         <Compile Include="src\BagInventory.cs" />
