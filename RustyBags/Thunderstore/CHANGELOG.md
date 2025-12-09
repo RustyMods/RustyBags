@@ -1,3 +1,6 @@
+# 1.3.3
+- positioning buttons programmatically
+
 # 1.3.2
 - fixed bag not auto-opening if interacting with crafting station
 - bag set auto-open to false if opening smoothbrain's backpacks

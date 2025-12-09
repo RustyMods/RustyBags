@@ -4,7 +4,6 @@ using BepInEx;
 using BepInEx.Configuration;
 using JetBrains.Annotations;
 using ServerSync;
-using UnityEngine;
 
 namespace RustyBags.Managers;
 
@@ -31,7 +30,6 @@ public static class Configs
         _multipleBags = config("1 - General", "Multiple Bags", Toggle.Off, "If on, player can carry multiple bags");
         _craftFromBag = config("1 - General", "Craft From Bag", Toggle.On, "If on, player can build and craft with equipped bag contents");
         _charmsAffectBag = config("1 - General", "Attachment Bonuses", Toggle.Off, "If on, bag attachments affect bag");
-        BagButtons.position = config("Buttons", "Position", new Vector2(85f,350f), "Set position of buttons", false);
         
         foreach(BagSetup? bagSetup in BagSetup.bags.Values) bagSetup.SetupConfigs();
         SetupWatcher();

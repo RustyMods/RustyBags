@@ -1,5 +1,4 @@
-﻿using BepInEx.Configuration;
-using HarmonyLib;
+﻿using HarmonyLib;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -8,8 +7,6 @@ namespace RustyBags;
 
 public class BagButtons : MonoBehaviour
 {
-    public static ConfigEntry<Vector2> position = null!;
-    
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Awake))]
     private static class InventoryGui_Awake_Patch
     {
@@ -17,19 +14,11 @@ public class BagButtons : MonoBehaviour
         {
             GameObject ButtonContainer = new GameObject("bag_buttons");
             RectTransform rect = ButtonContainer.AddComponent<RectTransform>();
-            rect.SetParent(__instance.m_container);
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            position.SettingChanged += (_,_) => OnPosChange();
-            
-            void OnPosChange()
-            {
-                rect.position = position.Value;
-            }
-            
-            OnPosChange();
-
+            rect.SetParent(__instance.m_container, false);
+            rect.anchorMin = new Vector2(0f, 0f);
+            rect.anchorMax = new Vector2(0f, 0f);
+            rect.pivot = new Vector2(0f, 1f);
+            rect.anchoredPosition = Vector2.zero;
             ButtonContainer.AddComponent<BagButtons>();
         }
     }
@@ -45,13 +34,15 @@ public class BagButtons : MonoBehaviour
         InventoryGui? gui = GetComponentInParent<InventoryGui>();
         Button? stackAll = gui.m_stackAllButton;
         HorizontalLayoutGroup? layout = gameObject.AddComponent<HorizontalLayoutGroup>();
-        layout.childAlignment = TextAnchor.MiddleLeft;
+        layout.childAlignment = TextAnchor.UpperLeft;
         layout.childForceExpandHeight = false;
         layout.childForceExpandWidth = false;
         layout.childControlHeight = false;
         layout.childControlWidth = false;
+        layout.spacing = 2f;
+        layout.padding.top = 10;
 
-        var template = new ButtonElement(stackAll.gameObject);
+        ButtonElement template = new ButtonElement(stackAll.gameObject);
         
         auto = template.Create(layout.transform, "RustyBag_Auto_Button");
         hide = template.Create(layout.transform, "RustyBag_Hide_Button");
@@ -64,6 +55,7 @@ public class BagButtons : MonoBehaviour
         
         hide.SetGamePadKey("JoyRTrigger");
         auto.SetGamePadKey("JoyLTrigger");
+        
         Hide();
     }
 
