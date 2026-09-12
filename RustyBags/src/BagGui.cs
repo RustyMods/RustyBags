@@ -79,9 +79,9 @@ public static class BagGui
         private static void Postfix(InventoryGrid __instance)
         {
             if (__instance.m_inventory is not BagInventory) return;
-            foreach (InventoryGrid.Element? element in __instance.m_elements)
+            foreach (InventoryElement element in __instance.m_elements)
             {
-                element.m_go.transform.Find("binding").GetComponent<TMP_Text>().enabled = false;
+                element.transform.Find("binding").GetComponent<TMP_Text>().enabled = false;
             }
         }
     }
@@ -96,7 +96,7 @@ public static class BagGui
                 new[]
                 {
                     typeof(string), typeof(int), typeof(int), typeof(int), typeof(long), typeof(string),
-                    typeof(Vector2i), typeof(bool)
+                    typeof(Vector2i), typeof(bool), typeof(bool), typeof(bool)
                 });
             MethodInfo? method = AccessTools.Method(typeof(InventoryGui_DoCraft_Transpile), nameof(AddCustomData));
             CodeInstruction[] newInstructions = {
@@ -164,7 +164,7 @@ public static class BagGui
             }
             else
             {
-                Vector2i pos = new Vector2i(Mathf.RoundToInt(ZInput.mousePosition.x), Mathf.RoundToInt(ZInput.mousePosition.y));
+                Vector2i pos = new Vector2i(Mathf.RoundToInt(ZInput.pointerPosition.x), Mathf.RoundToInt(ZInput.pointerPosition.y));
                 item = __instance.m_playerGrid.GetItem(pos);
             }
             

@@ -300,7 +300,7 @@ public class Bag : ItemDrop.ItemData
         m_customData[BAG_DATA_KEY] = pkg.GetBase64();
     }
 
-    private void UpdateTeleportable() => m_shared.m_teleportable = ZoneSystem.instance && inventory.IsTeleportable();
+    private void UpdateTeleportable() => m_shared.m_teleportable = ZoneSystem.instance && inventory.IsTeleportable(false);
 
     protected virtual void UpdateAttachments()
     {
